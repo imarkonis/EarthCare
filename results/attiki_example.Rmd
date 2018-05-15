@@ -1,0 +1,28 @@
+---
+title: "Example"
+author: "YannisMarkonis"
+date: "May 15, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is a presentation of the scalegram methodology, applied for the validation of satellite precipitation product. Here, we use the [GPM IMERGHH data product](https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGHH_05/summary) and the dense precipitation network of National Observatory of Athens for Attiki (Greece) region.
+
+## Data
+
+_Satellite data info: _
+
+* Dataset: GPM IMERG Final Precipitation L3 Half Hourly 0.1 degree x 0.1 degree V05
+* Date Range: 2017-11-30 to 2017-12-31
+* Spatial Region 23.269, 37.786, 23.906, 38.467
+* Variables: precipitationCal
+* Format: netCDF 4
+
+```{r cars}
+summary(cars)
+```
