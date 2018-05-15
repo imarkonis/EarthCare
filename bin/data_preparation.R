@@ -27,6 +27,8 @@ gpm_prcp$id <- paste0("gpm_", gpm_prcp$id)
 gpm_cells <- gpm_prcp[, c(6, 1:2)]
 gpm_prcp <- gpm_prcp[, c(6, 4, 5, 3)]
 
+save(gpm_prcp, gpm_cells, noa_prcp, noa_stations, file = "./data/dataset.rdata")
+
 #Correct timezone
 
 
