@@ -1,18 +1,15 @@
 source("source/import_functions.R")
 source("source/paths.R")
 
-require(ncdf4)
-require(doSNOW)
-
 #### NOA
 noa_stations <- read_noa_stations()
-noa_stations <- noa_stations[lat > 37.786 & lat < 38.467 & lon > 23.269 & lon < 23.906] #Region of interest 23.269 - 23.906, 37.786 - 38.467
+noa_stations <- noa_stations[lat > 37 & lat < 39 & lon > 23 & lon < 25] #Region of interest 23.269 - 23.906, 37.786 - 38.467
 noa_stations <- noa_stations[elev < 400] #Low elevation stations
 noa_stations_names <- noa_stations$station
 
 noa_prcp <- read_noa_data(noa_stations_names)
 noa_prcp <- merge(noa_stations[, 1:2], noa_prcp)
-noa_prcp <- noa_prcp[, 2:5]
+noa_prcp <- noa_prcp[, 2:4]
 
 #### GPM
 
@@ -22,22 +19,59 @@ noa_prcp <- noa_prcp[, 2:5]
 # See also https://disc.gsfc.nasa.gov/data-access#windows_wget
 
 gpm_prcp <- read_gpm_data()
-gpm_prcp[, id := .GRP, .(lon, lat)]
-gpm_prcp$id <- paste0("gpm_", gpm_prcp$id)
-gpm_cells <- gpm_prcp[, c(6, 1:2)]
-gpm_prcp <- gpm_prcp[, c(6, 4, 5, 3)]
+gpm_cells <- gpm_prcp[, c(5, 1:2)]
+gpm_cells <- gpm_cells[!duplicated(gpm_cells)]
+gpm_prcp <- gpm_prcp[, c(5, 4, 3)]
+gpm_prcp <- gpm_prcp[time > as.POSIXct("2017-12-1 00:00:00", tz = "UTC")]
 
-save(gpm_prcp, gpm_cells, noa_prcp, noa_stations, file = "./data/dataset.rdata")
+#### GPM daily (KNMI)
 
-#Correct timezone
+gpm_d_nc <- ncdf4::nc_open(paste0(data_gpm_day_example_path, "imerg_daily_23.269-23.906E_37.786-38.467N.nc"))  
+gpm_d = ncdf4::ncvar_get(gpm_d_nc)
+dimnames(gpm_d)[[3]] <- gpm_d_nc$dim$time$vals 
+dimnames(gpm_d)[[2]] <- gpm_d_nc$dim$lat$vals 
+dimnames(gpm_d)[[1]] <- gpm_d_nc$dim$lon$vals
+kk = ncdf4::nc_close(gpm_d_nc)
+gpm_d <- data.table::data.table(reshape2::melt(gpm_d, varnames = c("lon", "lat", "time"), value.name = "prcp")) 
+gpm_d$time <- gpm_d$time + as.Date("2014-03-12")
+gpm_d <- gpm_d[complete.cases(gpm_d)]
+gpm_d_prcp <- gpm_d[time > "2017-12-01" & time < "2017-12-31"] 
+gpm_d_prcp[, lat := factor(round(lat, 2))]
+gpm_d_prcp[, lon := factor(round(lon, 2))]
+gpm_d_cells <- gpm_d_prcp[, 1:2]
+gpm_d_cells <- gpm_d_cells[!duplicated(gpm_d_cells)]
+
+gpm_cells[, lat := factor(round(lat, 2))]
+gpm_cells[, lon := factor(round(lon, 2))]
+gpm_d_cells <- merge(gpm_cells, gpm_d_cells)
+gpm_d_prcp <- merge(gpm_d_cells, gpm_d_prcp,  by = c("lon", "lat"), all = TRUE)
+
+gpm_d_prcp[, lon <- NULL]
+gpm_d_prcp[, lat <- NULL]
+
+gpm_cells$lon <- as.numeric(as.character(gpm_cells$lon))
+gpm_cells$lat <- as.numeric(as.character(gpm_cells$lat))
+gpm_d_cells$lon <- as.numeric(as.character(gpm_d_cells$lon))
+gpm_d_cells$lat <- as.numeric(as.character(gpm_d_cells$lat))
 
 
-#Aggregate to 30min
+
+#### EOBS - Fail
+
+eobs_nc <- ncdf4::nc_open(paste0(data_eobs_example_path, "attiki_0.25deg_reg_v17.0u_23.269-23.906E_37.786-38.467N.nc"))  
+eobs = ncdf4::ncvar_get(eobs_nc)
+dimnames(eobs)[[3]] <- eobs_nc$dim$time$vals 
+dimnames(eobs)[[2]] <- eobs_nc$dim$lat$vals 
+dimnames(eobs)[[1]] <- eobs_nc$dim$lon$vals
+kk = ncdf4::nc_close(eobs_nc)
+eobs <- data.table::data.table(reshape2::melt(eobs, varnames = c("lon", "lat", "time"), value.name = "prcp")) #Only 3 points over land!!
+eobs$time <- eobs$time + as.Date("1950-01-01")
+eobs <- eobs[complete.cases(eobs)]
+eobs_prcp <- eobs[time > "2017-12-01" & time < "2017-12-31"] #No data during this period!!!
 
 
 
 
-#noa_prcp_wet <- noa_prcp[rain > 0]
-#noa_prcp_wet_days <- noa_prcp_wet[, unique(date), station]
-#colnames(noa_prcp_wet_days)[2] <- "wday" #to examine aggregation of wet vs not wet
-#noa_prcp_wet_days[, .N, station]
+
+
+save(gpm_prcp, gpm_cells, gpm_d_prcp, gpm_cells, noa_prcp, noa_stations, file = "./data/dataset.rdata")

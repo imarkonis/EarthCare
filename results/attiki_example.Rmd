@@ -6,7 +6,11 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE, cache = TRUE)
+```
+
+```{r libraries}
+require(ggplot2)
 ```
 
 ## Introduction
@@ -15,7 +19,7 @@ This is a presentation of the scalegram methodology, applied for the validation 
 
 ## Data
 
-_Satellite data info: _
+_Satellite data (gpm) info:_
 
 * Dataset: GPM IMERG Final Precipitation L3 Half Hourly 0.1 degree x 0.1 degree V05
 * Date Range: 2017-11-30 to 2017-12-31
@@ -23,6 +27,43 @@ _Satellite data info: _
 * Variables: precipitationCal
 * Format: netCDF 4
 
-```{r cars}
-summary(cars)
+The data were cropped to [2017-12-01, 2017-12-31] period. Then all grid cells with no gauge closer than 0.5 deg were removed.
+
+_Instrumental data (noa) info:_
+
+* Dataset: NOA automatic precipitation network
+* 10 minute precipitation 
+* Date Range: 2017-12-01, 2017-12-31
+* Spatial Region 23.269, 37.786, 23.906, 38.467
+* Variables: rainfall
+* Format: txt
+
+Stations above 400 meters were removed.
+
+```{r plot stations/grid cells}
+load("./data/dataset.rdata") 
+
+noa_stations <- match_noa_gpm(noa_stations, gpm_cells)
+
+noa_locations <- noa_stations[, c(1, 3, 4, 6)]
+noa_locations$dataset <- factor("noa")
+gpm_locations <- gpm_cells[id %in% noa_stations$nearest_cell]
+gpm_locations$nearest_cell <- gpm_locations$id
+gpm_locations$dataset <- factor("gpm")
+all_locations <- rbind(noa_locations, gpm_locations)
+ggplot(data = all_locations, aes(lon, lat, size = dataset, col = nearest_cell)) +
+  geom_point() 
+
+#daily
+noa_stations <- match_noa_gpm(noa_stations, gpm_d_cells)
+
+noa_locations <- noa_stations[, c(1, 3, 4, 6)]
+noa_locations$dataset <- factor("noa")
+gpm_locations <- gpm_d_cells[id %in% noa_stations$nearest_cell]
+gpm_locations$nearest_cell <- gpm_locations$id
+gpm_locations$dataset <- factor("gpm")
+all_locations <- rbind(noa_locations, gpm_locations)
+ggplot(data = all_locations, aes(lon, lat, size = dataset, col = nearest_cell)) +
+  geom_point() 
+
 ```

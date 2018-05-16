@@ -8,6 +8,8 @@ read_noa_stations <- function(){
   stations_noa <- data.table(read.delim(paste0(data_noa_path, "stations_list.txt"), header = FALSE, sep = ""))
   colnames(stations_noa) <- c("id", "station", "lat", "lon", "elev")
   stations_noa$id <- paste0("noa_", stations_noa$id)
+  stations_noa[, lat := round(lat, 2)]
+  stations_noa[, lon := round(lon, 2)]
   return(stations_noa )
 }
 
@@ -23,9 +25,10 @@ read_noa_data <- function(station_names){
     dummy$station <- station_names[i]
     noa_prcp <- rbind(noa_prcp, dummy)
   } 
-  noa_prcp[, date := as.Date(date)]
-  noa_prcp[, time := as.ITime(as.character(time))] #this is ITime class 
-  colnames(noa_prcp)[3] <- "prcp"
+  noa_prcp[, time := as.POSIXct(paste(as.Date(date), as.character(time)), "EET")]
+  attributes(noa_prcp$time)$tzone <- "UTC" # Change time zone to Universal
+  noa_prcp[, date := NULL]
+  colnames(noa_prcp)[2] <- "prcp"
   return(noa_prcp)
 }
 
@@ -51,7 +54,12 @@ read_gpm_data <- function(){
                                substr(file_list[i], 26, 27), "-",
                                substr(file_list[i], 28, 29))) 
     gpm$time <- data.table::as.ITime(paste0(substr(file_list[i], 40, 41), ":",
-                                            substr(file_list[i], 42, 43), ":")) 
+                                            substr(file_list[i], 42, 43), ":"))
+    gpm[, time := as.POSIXct(paste(date, time), "UTC")]
+    gpm$date <- NULL
+    gpm$time <- gpm$time + 60
+    gpm[, id := .GRP, .(lon, lat)]
+    gpm$id <- paste0("gpm_", gpm$id)
     gpm
   } 
   stopCluster(cluster)
