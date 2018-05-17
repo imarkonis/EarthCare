@@ -1,6 +1,7 @@
 require(rgeos)
 require(maptools)
 
+#Find noa stations within gpm grid cells
 match_noa_gpm <- function(noa_stations, gpm_cells){
   set1sp <- SpatialPoints(noa_stations[, c('lon', 'lat')])
   set2sp <- SpatialPoints(gpm_cells[, c('lon', 'lat')])
@@ -13,3 +14,14 @@ match_noa_gpm <- function(noa_stations, gpm_cells){
   noa_stations$nearest_cell <- gpm_cells[noa_stations$nearest_cell]$id
   return(noa_stations)
 }
+
+
+
+
+
+
+
+
+
+
+

@@ -1,5 +1,7 @@
 source("source/paths.R")
 
+##For subdaily gpm
+
 load("./data/dataset.rdata") #Created in data_preparation
 
 wday_thres <- 0.8 #percentage of stations/cells that are wet during day
@@ -32,36 +34,6 @@ mean(noa_prcp[as.Date(time) %in% common_wdays, sum(prcp, na.rm = TRUE), id]$V1)
 gpm_prcp_day <- gpm_prcp[as.Date(time) %in% common_wdays, sum(prcp), .(as.Date(time), id)]
 noa_prcp_day <- noa_prcp[as.Date(time) %in% common_wdays, sum(prcp, na.rm = TRUE), .(as.Date(time), id)]
 
-#gpm_41
-
-test_noa <- noa_prcp_wet[id %in% noa_stations[nearest_cell == "gpm_41"]$id]
-test_gpm <- gpm_prcp_wet[id == "gpm_41"]
-test_noa[, ceiling(.N / 3), as.Date(time)]
-test_gpm[, .N, as.Date(time)]
-
-test_noa[, sum(prcp), as.Date(time)]
-test_gpm[, sum(prcp), as.Date(time)]
-
-#gpm_47
-
-test_noa <- noa_prcp_wet[id %in% noa_stations[nearest_cell == "gpm_47"]$id]
-test_gpm <- gpm_prcp_wet[id == "gpm_47"]
-test_noa[, ceiling(.N / 3), as.Date(time)]
-test_gpm[, .N, as.Date(time)]
-
-test_noa[, sum(prcp), as.Date(time)]
-test_gpm[, sum(prcp), as.Date(time)]
-
-#gpm_50
-
-test_noa <- noa_prcp_wet[id %in% noa_stations[nearest_cell == "gpm_50"]$id]
-test_gpm <- gpm_prcp_wet[id == "gpm_50"]
-test_noa[, ceiling(.N / 3), as.Date(time)]
-test_gpm[, .N, as.Date(time)]
-
-test_noa[, sum(prcp), as.Date(time)]
-test_gpm[, sum(prcp), as.Date(time)]
-
 #gpm_22
 
 test_noa <- noa_prcp_wet[id %in% noa_stations[nearest_cell == "gpm_22"]$id]
@@ -89,8 +61,3 @@ test_noa[, sum(prcp)/ 7, .(as.Date(time))]
 
 test_noa[, sum(prcp), .(id)]
 test_gpm[, sum(prcp)]
-
-seq1<-seq(as.POSIXct("2014-02-7 7:00:00"), as.POSIXct("2014-02-21 17:00:00"), by="30 mins")
-
-#find the maximum value for each time cluster
-data2<-aggregate(data1,list=seq1,max)

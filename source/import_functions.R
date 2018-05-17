@@ -32,7 +32,6 @@ read_noa_data <- function(station_names){
   return(noa_prcp)
 }
 
-
 read_gpm_data <- function(){
   file_list <- list.files(data_gpm_example_path)
   data_gpm_example_path <- data_gpm_example_path #needed to make foreach work
@@ -41,7 +40,6 @@ read_gpm_data <- function(){
   if(no_cores < 1 | is.na(no_cores))(no_cores <- 1)
   cluster = makeCluster(no_cores, type = "SOCK")
   registerDoSNOW(cluster)
-  
 
   gpm_prcp <- foreach (i = 1:length(file_list), .combine = 'rbind') %dopar%  {
     gpm_nc <- ncdf4::nc_open(paste0(data_gpm_example_path, file_list[i]))  

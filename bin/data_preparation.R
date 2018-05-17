@@ -3,13 +3,19 @@ source("source/paths.R")
 
 #### NOA
 noa_stations <- read_noa_stations()
+noa_stations_islands <- noa_stations[lat > 36 & lat < 37.5 & lon > 24 & lon < 26.5] 
 noa_stations <- noa_stations[lat > 37 & lat < 39 & lon > 23 & lon < 25] #Region of interest 23.269 - 23.906, 37.786 - 38.467
 noa_stations <- noa_stations[elev < 400] #Low elevation stations
 noa_stations_names <- noa_stations$station
+noa_stations_names_islands <- noa_stations_islands$station
 
 noa_prcp <- read_noa_data(noa_stations_names)
 noa_prcp <- merge(noa_stations[, 1:2], noa_prcp)
 noa_prcp <- noa_prcp[, 2:4]
+
+noa_prcp_islands <- read_noa_data(noa_stations_names_islands)
+noa_prcp_islands <- merge(noa_stations_islands[, 1:2], noa_prcp_islands)
+noa_prcp_islands <- noa_prcp_islands[, 2:4]
 
 #### GPM
 
@@ -54,8 +60,6 @@ gpm_cells$lat <- as.numeric(as.character(gpm_cells$lat))
 gpm_d_cells$lon <- as.numeric(as.character(gpm_d_cells$lon))
 gpm_d_cells$lat <- as.numeric(as.character(gpm_d_cells$lat))
 
-
-
 #### EOBS - Fail
 
 eobs_nc <- ncdf4::nc_open(paste0(data_eobs_example_path, "attiki_0.25deg_reg_v17.0u_23.269-23.906E_37.786-38.467N.nc"))  
@@ -68,9 +72,6 @@ eobs <- data.table::data.table(reshape2::melt(eobs, varnames = c("lon", "lat", "
 eobs$time <- eobs$time + as.Date("1950-01-01")
 eobs <- eobs[complete.cases(eobs)]
 eobs_prcp <- eobs[time > "2017-12-01" & time < "2017-12-31"] #No data during this period!!!
-
-
-
 
 
 

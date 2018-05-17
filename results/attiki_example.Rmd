@@ -29,6 +29,8 @@ _Satellite data (gpm) info:_
 
 The data were cropped to [2017-12-01, 2017-12-31] period. Then all grid cells with no gauge closer than 0.5 deg were removed.
 
+Right now working with the 1d product downloaded from knmi, which does not correspond to the 30-min. Have to check code and version.
+
 _Instrumental data (noa) info:_
 
 * Dataset: NOA automatic precipitation network
@@ -43,18 +45,7 @@ Stations above 400 meters were removed.
 ```{r plot stations/grid cells}
 load("./data/dataset.rdata") 
 
-noa_stations <- match_noa_gpm(noa_stations, gpm_cells)
 
-noa_locations <- noa_stations[, c(1, 3, 4, 6)]
-noa_locations$dataset <- factor("noa")
-gpm_locations <- gpm_cells[id %in% noa_stations$nearest_cell]
-gpm_locations$nearest_cell <- gpm_locations$id
-gpm_locations$dataset <- factor("gpm")
-all_locations <- rbind(noa_locations, gpm_locations)
-ggplot(data = all_locations, aes(lon, lat, size = dataset, col = nearest_cell)) +
-  geom_point() 
-
-#daily
 noa_stations <- match_noa_gpm(noa_stations, gpm_d_cells)
 
 noa_locations <- noa_stations[, c(1, 3, 4, 6)]
