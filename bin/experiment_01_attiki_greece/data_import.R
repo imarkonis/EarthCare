@@ -1,12 +1,12 @@
-source("source/import_functions.R")
-source("source/paths.R")
+source("./source/import.R")
+source("./source/spatial_tools.R")
+source("./source/paths.R") 
 
 #### NOA
 noa_stations <- read_noa_stations()
 noa_stations <- noa_stations[lat > 37 & lat < 39 & lon > 23 & lon < 25] #Region of interest 23.269 - 23.906, 37.786 - 38.467
 noa_stations <- noa_stations[elev < 400] #Low elevation stations
 noa_stations_names <- noa_stations$station
-
 
 noa_prcp <- read_noa_data(noa_stations_names)
 noa_prcp <- merge(noa_stations[, 1:2], noa_prcp)
@@ -55,6 +55,9 @@ gpm_cells$lat <- as.numeric(as.character(gpm_cells$lat))
 gpm_d_cells$lon <- as.numeric(as.character(gpm_d_cells$lon))
 gpm_d_cells$lat <- as.numeric(as.character(gpm_d_cells$lat))
 
+noa_stations <- match_noa_gpm(noa_stations, gpm_d_cells)
+save(gpm_prcp, gpm_cells, gpm_d_prcp, gpm_cells, noa_prcp, noa_stations, file = "./data/experiment_1.rdata")
+
 #### EOBS - Fail
 
 eobs_nc <- ncdf4::nc_open(paste0(data_eobs_example_path, "attiki_0.25deg_reg_v17.0u_23.269-23.906E_37.786-38.467N.nc"))  
@@ -70,4 +73,4 @@ eobs_prcp <- eobs[time > "2017-12-01" & time < "2017-12-31"] #No data during thi
 
 
 
-save(gpm_prcp, gpm_cells, gpm_d_prcp, gpm_cells, noa_prcp, noa_stations, file = "./data/dataset.rdata")
+

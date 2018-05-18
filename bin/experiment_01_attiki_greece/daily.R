@@ -1,9 +1,8 @@
 require(data.table)
 require(ggplot2)
-source("source/paths.R")
-source("source/graphics.R")
-
-load("./data/dataset.rdata") 
+source("./source/paths.R")
+source("./source/graphics.R")
+load("./data/experiment_1.rdata") #Created in data_import
 
 noa_d_prcp <- noa_prcp[, sum(prcp, na.rm = T), .(as.Date(time), id)]
 colnames(noa_d_prcp)[1] <- "time"

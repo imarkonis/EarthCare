@@ -1,8 +1,5 @@
-source("source/paths.R")
-
-##For subdaily gpm
-
-load("./data/dataset.rdata") #Created in data_preparation
+source("./source/paths.R")
+load("./data/experiment_1.rdata") #Created in data_import
 
 wday_thres <- 0.8 #percentage of stations/cells that are wet during day
 

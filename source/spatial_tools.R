@@ -15,6 +15,12 @@ match_noa_gpm <- function(noa_stations, gpm_cells){
   return(noa_stations)
 }
 
+dist_rank <- function(x, pt){ #x is c(id, lon, lat) and pt is the point to estimate rank of distances 
+  set_sp <- SpatialPoints(x[, c('lon', 'lat')])
+  x <- cbind(x, dist = as.numeric(gDistance(set_sp,  SpatialPoints(pt), byid = TRUE)))
+  return(rank(x$dist))
+}
+
 
 
 
