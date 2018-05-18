@@ -1,0 +1,18 @@
+---
+title: "summary log"
+author: "YannisMarkonis"
+date: "May 1, 2018"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+Started with Attiki region (Greece) and 10-min automatic sensor data vs 30-min gpm data (December 2017). 
+Big discrepancies in amounts - but the days of events are ok.
+
+Comparison with daily knmi gpm data shows better agreement but still the differences persist.
+Monthly averages are quite close (due to over-under-estimations). Heterogeneity of ground
+observations are higher (range: 10 - 90mm for month) compared to satelltie (40 - 60mm).
+
