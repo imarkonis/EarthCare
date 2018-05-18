@@ -1,6 +1,6 @@
 require(data.table)
 require(ggplot2)
-source("./source/paths.R")
+
 source("./source/graphics.R")
 load("./data/experiment_1.rdata") #Created in data_import
 

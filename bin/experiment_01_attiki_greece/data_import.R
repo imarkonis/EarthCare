@@ -2,13 +2,17 @@ source("./source/import.R")
 source("./source/spatial_tools.R")
 source("./source/paths.R") 
 
+data_noa_experiment_path <- paste0(data_noa_path, "dec2017/")
+data_gpm_experiment_path <- paste0(data_gpm_path, "dec2017/")
+data_gpm_experiment_day_path <- paste0(data_gpm_path, "attiki/")
+
 #### NOA
 noa_stations <- read_noa_stations()
 noa_stations <- noa_stations[lat > 37 & lat < 39 & lon > 23 & lon < 25] #Region of interest 23.269 - 23.906, 37.786 - 38.467
 noa_stations <- noa_stations[elev < 400] #Low elevation stations
 noa_stations_names <- noa_stations$station
 
-noa_prcp <- read_noa_data(noa_stations_names)
+noa_prcp <- read_noa_data(noa_stations_names, data_noa_experiment_path)
 noa_prcp <- merge(noa_stations[, 1:2], noa_prcp)
 noa_prcp <- noa_prcp[, 2:4]
 
@@ -19,7 +23,7 @@ noa_prcp <- noa_prcp[, 2:4]
 # wget --load-cookies C:\.urs_cookies --save-cookies C:\.urs_cookies --auth-no-challenge=on --keep-session-cookies --user=imarkonis --ask-password --content-disposition -i attiki_GPM_3IMERGHH_V05_20180515_130556.txt
 # See also https://disc.gsfc.nasa.gov/data-access#windows_wget
 
-gpm_prcp <- read_gpm_data()
+gpm_prcp <- read_gpm_30min(data_gpm_experiment_path)
 gpm_cells <- gpm_prcp[, c(5, 1:2)]
 gpm_cells <- gpm_cells[!duplicated(gpm_cells)]
 gpm_prcp <- gpm_prcp[, c(5, 4, 3)]
@@ -27,7 +31,7 @@ gpm_prcp <- gpm_prcp[time > as.POSIXct("2017-12-1 00:00:00", tz = "UTC")]
 
 #### GPM daily (KNMI)
 
-gpm_d_nc <- ncdf4::nc_open(paste0(data_gpm_day_example_path, "imerg_daily_23.269-23.906E_37.786-38.467N.nc"))  
+gpm_d_nc <- ncdf4::nc_open(paste0(data_gpm_day_path, "imerg_daily_23.269-23.906E_37.786-38.467N.nc"))  
 gpm_d = ncdf4::ncvar_get(gpm_d_nc)
 dimnames(gpm_d)[[3]] <- gpm_d_nc$dim$time$vals 
 dimnames(gpm_d)[[2]] <- gpm_d_nc$dim$lat$vals 
