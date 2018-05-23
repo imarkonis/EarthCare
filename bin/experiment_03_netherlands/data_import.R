@@ -56,7 +56,7 @@ knmi_prcp[prcp > 1000, prcp := NA]
 knmi_stations <- data.table(read.csv(paste0(data_knmi_station_path, "stations_hom_1951.csv"), header = F))
 knmi_stations <- knmi_stations[, c(1:3, 6)]
 colnames(knmi_stations) <- c("id", "lon", "lat", "station")
-knmi_stations$id <- as.character(knmi_stations$id)
+knmi_stations$id <- colnames(knmi)
 
 rm(knmi); gc()
 
@@ -88,8 +88,8 @@ test_knmi <- merge(test_knmi, knmi_stations)
 
 ggplot(test_rdr[prcp > 0], aes(y = lat, x = lon, col = prcp)) + 
   geom_point() +
-  geom_point(data = test_gpm[prcp > 0], aes(y = lat, x = lon), col = "red") +
-  geom_point(data = test_knmi[prcp > 0], aes(y = lat, x = lon), col = "yellow") +
+  geom_point(data = test_gpm, aes(y = lat, x = lon), col = "red") +
+  geom_point(data = test_knmi, aes(y = lat, x = lon), col = "yellow") +
   theme_bw()
 
 ggplot(test_rdr[prcp > 1], aes(y = lat, x = lon, col = prcp)) + 
@@ -111,8 +111,8 @@ ggplot(test_rdr[prcp > 10], aes(y = lat, x = lon, col = prcp)) +
   geom_point(data = test_knmi[prcp > 10], aes(y = lat, x = lon), col = "yellow") +
   theme_bw()
 
-ggplot(test_rdr[prcp > 0], aes(y = lat, x = lon, col = prcp)) + 
+ggplot(test_rdr, aes(y = lat, x = lon, col = prcp)) + 
   geom_point() +
-  geom_point(data = test_gpm[prcp > 0], aes(y = lat, x = lon, col = prcp)) +
-  geom_point(data = test_knmi[prcp > 0], aes(y = lat, x = lon, col = prcp)) +
+  geom_point(data = test_gpm, aes(y = lat, x = lon, col = prcp)) +
+  geom_point(data = test_knmi, aes(y = lat, x = lon, col = prcp)) +
   theme_bw()

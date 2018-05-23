@@ -15,10 +15,10 @@ put_stations_to_cells <- function(stations, cells, cell_dist = 0.5){
   return(stations)
 }
 
-dist_rank <- function(x, pt){ #x is c(id, lon, lat) and pt is the point to estimate rank of distances 
+dist_rank <- function(x, pt){ #x is c(id, lon, lat) and pt is the point to estimate rank of distances (lon, lat)
   set_sp <- SpatialPoints(x[, c('lon', 'lat')])
   x <- cbind(x, dist = as.numeric(gDistance(set_sp,  SpatialPoints(pt), byid = TRUE)))
-  return(rank(x$dist))
+  return(rank(distance, ties.method = "random"))
 }
 
 
