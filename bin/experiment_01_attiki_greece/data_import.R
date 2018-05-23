@@ -59,7 +59,7 @@ gpm_cells$lat <- as.numeric(as.character(gpm_cells$lat))
 gpm_d_cells$lon <- as.numeric(as.character(gpm_d_cells$lon))
 gpm_d_cells$lat <- as.numeric(as.character(gpm_d_cells$lat))
 
-noa_stations <- match_noa_gpm(noa_stations, gpm_d_cells)
+noa_stations <- put_stations_to_cells(noa_stations, gpm_d_cells) #Put stations to cells
 save(gpm_prcp, gpm_cells, gpm_d_prcp, gpm_cells, noa_prcp, noa_stations, file = "./data/experiment_1.rdata")
 
 #### EOBS - Fail

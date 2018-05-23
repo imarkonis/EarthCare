@@ -4,7 +4,6 @@ require(data.table)
 require(ncdf4)
 require(doSNOW)
 
-
 read_noa_stations <- function(){
   stations_noa <- data.table(read.delim(paste0(data_noa_path, "stations_list.txt"), header = FALSE, sep = ""))
   colnames(stations_noa) <- c("id", "station", "lat", "lon", "elev")

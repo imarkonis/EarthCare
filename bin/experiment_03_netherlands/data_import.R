@@ -15,10 +15,6 @@ gpm_d_prcp <- gpm_d[[1]]
 
 #### Radar
 rdr_nc_file <- paste0(data_knmi_rdr_path, "nl_2009_2016.nc")
-
-#noa_stations <- match_noa_gpm(noa_stations, gpm_d_cells)
-#save(gpm_prcp, gpm_cells, gpm_d_prcp, gpm_cells, noa_prcp, noa_stations, file = "./data/experiment_3.rdata")
-
 rdr_nc <- ncdf4::nc_open(rdr_nc_file)  
 rdr = ncdf4::ncvar_get(rdr_nc)
 dimnames(rdr)[[3]] <- rdr_nc$dim$time$vals 
@@ -32,7 +28,7 @@ rdr_prcp <- rdr[complete.cases(rdr)]
 rdr_prcp[, lat := round(as.numeric(as.character(lat)), 2)]
 rdr_prcp[, lon := round(as.numeric(as.character(lon)), 2)]
 rdr_prcp[, id := .GRP, .(lon, lat)]
-rdr_prcp$id <- paste0("gpm_", rdr_prcp$id)
+rdr_prcp$id <- paste0("rdr_", rdr_prcp$id)
 
 rdr_cells <- rdr_prcp[, c(5, 1:2)]
 rdr_cells <- rdr_cells[!duplicated(rdr_cells)]
@@ -64,6 +60,10 @@ knmi_stations$id <- as.character(knmi_stations$id)
 
 rm(knmi); gc()
 
+#Find the nearest gpm cell center for each station or radar cell center
+knmi_stations <- put_stations_to_cells(knmi_stations, gpm_d_cells) 
+rdr_cells <- put_stations_to_cells(rdr_cells, gpm_d_cells) 
+
 save(knmi_stations, knmi_prcp, gpm_d_cells, gpm_d_prcp, rdr_cells, rdr_prcp, file = paste0("./data/experiment_3.rdata"))
 
 #### Reanalysis
@@ -74,7 +74,7 @@ save(knmi_stations, knmi_prcp, gpm_d_cells, gpm_d_prcp, rdr_cells, rdr_prcp, fil
 
 #### Testing
 require(ggplot2)
-"2016-09-15"
+
 my_date <- as.Date("2016-9-16")
 
 test_rdr <- rdr_prcp[time == my_date]
