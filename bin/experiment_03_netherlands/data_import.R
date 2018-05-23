@@ -1,3 +1,5 @@
+require(data.table)
+
 source("./source/import.R")
 source("./source/spatial_tools.R")
 source("./source/paths.R") 
@@ -13,7 +15,7 @@ gpm_d_prcp <- gpm_d[[1]]
 
 #### Radar
 rdr_nc_file <- paste0(data_knmi_rdr_path, "nl_2009_2016.nc")
-rdr <- read_gpm_day(rdr_nc_file)
+
 #noa_stations <- match_noa_gpm(noa_stations, gpm_d_cells)
 #save(gpm_prcp, gpm_cells, gpm_d_prcp, gpm_cells, noa_prcp, noa_stations, file = "./data/experiment_3.rdata")
 
@@ -36,38 +38,81 @@ rdr_cells <- rdr_prcp[, c(5, 1:2)]
 rdr_cells <- rdr_cells[!duplicated(rdr_cells)]
 rdr_prcp <- rdr_prcp[, c(5, 3:4)]
 
-#### Stations
+rm(rdr); gc()
 
+#### Stations - downloaded from https://climexp.knmi.nl/getdutchstations.cgi?id=312456c83e660703df1bfea9ba4fba50&TYPE=preciphom1951
+knmi <- data.table(read.delim(paste0(data_knmi_station_path, "precip_hom1951_NL.txt"), header = T, sep = ""))
+knmi_dates <- data.table(read.delim(paste0(data_knmi_station_path, "precip_hom1951_NL.txt"), header = T, sep = " "))
+knmi_dates <- knmi_dates[, 1]
+no_stations <- ncol(knmi)
+colnames(knmi) <- substr(colnames(knmi), 2, 4)
+knmi_prcp <- melt(knmi)
+knmi_prcp$time <- rep(as.Date(paste0(substr(knmi_dates$X010, 1, 4), "-", 
+                                     substr(knmi_dates$X010, 5, 6), "-", 
+                                     substr(knmi_dates$X010, 7, 8))),
+                      no_stations) - 1 #remove one day to fix sync issue with the radar/satellite sets  
+
+knmi_prcp <- knmi_prcp[, c(1, 3, 2)]
+colnames(knmi_prcp) <- c("id", "time", "prcp")
+knmi_prcp$id <- as.character(knmi_prcp$id)
+knmi_prcp[prcp > 1000, prcp := NA]
+
+knmi_stations <- data.table(read.csv(paste0(data_knmi_station_path, "stations_hom_1951.csv"), header = F))
+knmi_stations <- knmi_stations[, c(1:3, 6)]
+colnames(knmi_stations) <- c("id", "lon", "lat", "station")
+knmi_stations$id <- as.character(knmi_stations$id)
+
+rm(knmi); gc()
+
+save(knmi_stations, knmi_prcp, gpm_d_cells, gpm_d_prcp, rdr_cells, rdr_prcp, file = paste0("./data/experiment_3.rdata"))
 
 #### Reanalysis
 
+#todo
 
-#testing
+
+
+#### Testing
 require(ggplot2)
-"2016-09-16"
-my_date <- "2016-09-15"
+"2016-09-15"
+my_date <- as.Date("2016-9-16")
+
 test_rdr <- rdr_prcp[time == my_date]
 test_rdr <- merge(test_rdr, rdr_cells)
 
 test_gpm <- gpm_d_prcp[time == my_date]
 test_gpm <- merge(test_gpm, gpm_d_cells)
 
+test_knmi <- knmi_prcp[time == my_date]
+test_knmi <- merge(test_knmi, knmi_stations)
+
 ggplot(test_rdr[prcp > 0], aes(y = lat, x = lon, col = prcp)) + 
   geom_point() +
   geom_point(data = test_gpm[prcp > 0], aes(y = lat, x = lon), col = "red") +
+  geom_point(data = test_knmi[prcp > 0], aes(y = lat, x = lon), col = "yellow") +
   theme_bw()
 
 ggplot(test_rdr[prcp > 1], aes(y = lat, x = lon, col = prcp)) + 
   geom_point() +
   geom_point(data = test_gpm[prcp > 1], aes(y = lat, x = lon), col = "red") +
+  geom_point(data = test_knmi[prcp > 1], aes(y = lat, x = lon), col = "yellow") +
+  
   theme_bw()
 
 ggplot(test_rdr[prcp > 5], aes(y = lat, x = lon, col = prcp)) + 
   geom_point() +
-  geom_point(data = test_gpm[prcp > 10], aes(y = lat, x = lon), col = "red") +
+  geom_point(data = test_gpm[prcp > 5], aes(y = lat, x = lon), col = "red") +
+  geom_point(data = test_knmi[prcp > 5], aes(y = lat, x = lon), col = "yellow") +
   theme_bw()
 
 ggplot(test_rdr[prcp > 10], aes(y = lat, x = lon, col = prcp)) + 
   geom_point() +
   geom_point(data = test_gpm[prcp > 10], aes(y = lat, x = lon), col = "red") +
+  geom_point(data = test_knmi[prcp > 10], aes(y = lat, x = lon), col = "yellow") +
+  theme_bw()
+
+ggplot(test_rdr[prcp > 0], aes(y = lat, x = lon, col = prcp)) + 
+  geom_point() +
+  geom_point(data = test_gpm[prcp > 0], aes(y = lat, x = lon, col = prcp)) +
+  geom_point(data = test_knmi[prcp > 0], aes(y = lat, x = lon, col = prcp)) +
   theme_bw()

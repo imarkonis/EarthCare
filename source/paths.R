@@ -3,3 +3,4 @@ data_noa_path <- "C:/Users/markonis/Documents/Yannis/Various_Proj/Grants/2018ESA
 data_gpm_path <- "C:/Users/markonis/Documents/Yannis/Various_Proj/Grants/2018ESA_Validation/rawdata/gpm/"
 data_eobs_path <- "C:/Users/markonis/Documents/Yannis/Various_Proj/Grants/2018ESA_Validation/rawdata/eobs/"
 data_knmi_rdr_path <- "C:/Users/markonis/Documents/Yannis/Various_Proj/Grants/2018ESA_Validation/rawdata/knmi_radar/"
+data_knmi_station_path <- "C:/Users/markonis/Documents/Yannis/Various_Proj/Grants/2018ESA_Validation/rawdata/knmi_stations/"
