@@ -35,14 +35,19 @@ This is a presentation of the scalegram methodology, applied for the validation 
 * Variables: gpm_d_cells (coordinates) & gpm_d_prcp (values) in _experiment_3.rdata_.
 * IDs: `r min(gpm_d_cells$id)`
 * Size: `r nrow(gpm_d_prcp)` total values, over `r nrow(gpm_d_cells)` grid cells
+* Downloaded from: https://climexp.knmi.nl/select.cgi?id=312456c83e660703df1bfea9ba4fba50&field=imerg_daily 
 
 **Instrumental data (knmi)**
 
 todo
+* Downloaded from: https://climexp.knmi.nl/PhomNL.cgi?id=312456c83e660703df1bfea9ba4fba50
 
 **Radar data (knmi)**
 
 todo
+* Downloaded from: https://climexp.knmi.nl/select.cgi?id=312456c83e660703df1bfea9ba4fba50&field=knmi_radar_daily
+
+
 
 ### Code structure
 
