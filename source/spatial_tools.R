@@ -15,6 +15,7 @@ put_stations_to_cells <- function(stations, cells, cell_dist = 0.5){
   return(stations)
 }
 
+#Ranks distances of a matrix of points to a single point (lon, lat)
 dist_rank <- function(x, pt){ #x is c(id, lon, lat) and pt is the point to estimate rank of distances (lon, lat)
   set_sp <- SpatialPoints(x[, c('lon', 'lat')])
   x <- cbind(x, dist = as.numeric(gDistance(set_sp,  SpatialPoints(pt), byid = TRUE)))

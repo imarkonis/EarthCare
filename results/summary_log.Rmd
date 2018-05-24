@@ -16,3 +16,6 @@ Comparison with daily knmi gpm data shows better agreement but still the differe
 Monthly averages are quite close (due to over-under-estimations). Heterogeneity of ground
 observations are higher (range: 10 - 90mm for month) compared to satelltie (40 - 60mm).
 
+Moving to Netherlands (experiment 3) things are quite better. There is some aggreement between station, 
+radar and satellite data.
+

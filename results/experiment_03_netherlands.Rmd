@@ -1,0 +1,93 @@
+---
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = F, cache = T, warning = F)
+```
+
+```{r libraries & data}
+require(ggplot2)
+require(data.table)
+
+load("../data/experiment_3.rdata") #Created in data_import
+```
+
+# Experiment 3 
+
+## KNMI station vs. KNMI radar vs. GPM-IMERG satellite over Netherlands
+
+### Introduction
+
+This is a presentation of the scalegram methodology, applied for the validation of satellite precipitation product. Here, we use the [GPM IMERGHH data product](https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDF_V05/summary) and the KNMI radar, the dense precipitation network of KNMI for Netherlands.
+
+### Data
+
+**Satellite data (gpm)**
+
+* Dataset: GPM IMERG Final Precipitation 
+* Temporal Resolution: 1 day
+* Spatial Resolution: 0.1 deg
+* Date Range: `r min(gpm_d_prcp$time)` to `r max(gpm_d_prcp$time)` 
+* Spatial Region: latitude: `r range(gpm_d_cells$lat)`, longitude: `r range(gpm_d_cells$lon)`
+* Variables: precipitationCal
+* Format: netCDF 4
+* Variables: gpm_d_cells (coordinates) & gpm_d_prcp (values) in _experiment_3.rdata_.
+* IDs: `r min(gpm_d_cells$id)`
+* Size: `r nrow(gpm_d_prcp)` total values, over `r nrow(gpm_d_cells)` grid cells
+
+**Instrumental data (knmi)**
+
+todo
+
+**Radar data (knmi)**
+
+todo
+
+### Code structure
+
+_data_import.R_ : Import and prepare station, radar and satellite data for netherlands. Each pair 
+# of data (values and coordinates) is then saved to experiment_3.rdata.
+
+_spatial_agg.R_ : Aggregation of rain events over space.
+
+**Grid cell centers vs. Stations locations**
+
+All grid cells with no gauge closer than 0.5 deg are removed.
+
+```{r plot stations/grid cells, eval = F}
+noa_locations <- noa_stations[, c(1, 3, 4, 6)]
+noa_locations$dataset <- factor("noa")
+gpm_locations <- gpm_cells[id %in% noa_stations$nearest_cell]
+gpm_locations$nearest_cell <- gpm_locations$id
+gpm_locations$dataset <- factor("gpm")
+all_locations <- rbind(noa_locations, gpm_locations)
+ggplot(data = all_locations, aes(lon, lat, size = dataset, col = nearest_cell)) +
+  geom_point() +
+  xlab(label = "") +
+  ylab(label = "") +
+  theme_bw()
+```
+
+**Monthly heterogeneity**
+
+```{r plot monthly means, eval = F}
+noa_month_prcp <- noa_prcp[, sum(prcp, na.rm = T), id]  
+colnames(noa_month_prcp)[2] <- "prcp"
+gpm_month_prcp <- gpm_d_prcp[, sum(prcp), id]
+colnames(gpm_month_prcp)[2] <- "prcp"
+
+noa_month_prcp <- merge(noa_month_prcp, noa_stations[, .(id, lon, lat)])
+gpm_month_prcp <- merge(gpm_month_prcp, gpm_cells[, .(id, lon, lat)])
+
+month_prcp <- rbind(cbind(gpm_month_prcp, dataset = "gpm"),
+                    cbind(noa_month_prcp, dataset = "noa"))
+
+ggplot(data = month_prcp, aes(lon, lat, col = prcp, size = dataset)) +
+  geom_point() +
+  xlab(label = "") +
+  ylab(label = "") +
+  theme_bw()
+```
+
+

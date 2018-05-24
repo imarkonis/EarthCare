@@ -1,3 +1,6 @@
+# Import and prepare station, radar and satellite data for netherlands. Each pair 
+# of data (values and coordinates) is saved to experiment_3.rdata.
+
 require(data.table)
 
 source("./source/import.R")
