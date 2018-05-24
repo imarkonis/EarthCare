@@ -2,11 +2,11 @@
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = F, cache = T, warning = F)
 ```
 
-```{r libraries & data}
+```{r libraries & data, include = F}
 require(ggplot2)
 require(data.table)
 
@@ -20,6 +20,8 @@ load("../data/experiment_3.rdata") #Created in data_import
 ### Introduction
 
 This is a presentation of the scalegram methodology, applied for the validation of satellite precipitation product. Here, we use the [GPM IMERGHH data product](https://disc.gsfc.nasa.gov/datasets/GPM_3IMERGDF_V05/summary) and the KNMI radar, the dense precipitation network of KNMI for Netherlands.
+
+***
 
 ### Data
 
@@ -47,7 +49,7 @@ todo
 todo
 * Downloaded from: https://climexp.knmi.nl/select.cgi?id=312456c83e660703df1bfea9ba4fba50&field=knmi_radar_daily
 
-
+***
 
 ### Code structure
 
@@ -56,26 +58,48 @@ _data_import.R_ : Import and prepare station, radar and satellite data for nethe
 
 _spatial_agg.R_ : Aggregation of rain events over space.
 
-**Grid cell centers vs. Stations locations**
+***
 
-All grid cells with no gauge closer than 0.5 deg are removed.
+### Datasets in space
 
-```{r plot stations/grid cells, eval = F}
-noa_locations <- noa_stations[, c(1, 3, 4, 6)]
-noa_locations$dataset <- factor("noa")
-gpm_locations <- gpm_cells[id %in% noa_stations$nearest_cell]
-gpm_locations$nearest_cell <- gpm_locations$id
-gpm_locations$dataset <- factor("gpm")
-all_locations <- rbind(noa_locations, gpm_locations)
-ggplot(data = all_locations, aes(lon, lat, size = dataset, col = nearest_cell)) +
-  geom_point() +
-  xlab(label = "") +
-  ylab(label = "") +
+In each case, grid cells with no gauge/radar cell center within a 0.5 deg radious of satellite cell center, are removed.
+
+**GPM grid cell centers vs. station locations**
+
+```{r plot stations/grid cells, eval = T}
+my_date <- as.Date("2016-9-03")
+test_rdr <- rdr_prcp[time == my_date]
+test_rdr <- merge(test_rdr, rdr_cells)
+
+test_gpm <- gpm_d_prcp[time == my_date]
+test_gpm <- merge(test_gpm, gpm_d_cells)
+
+test_knmi <- knmi_prcp[time == my_date]
+test_knmi <- merge(test_knmi, knmi_stations)
+test_knmi <- test_knmi[complete.cases(test_knmi)]
+
+ggplot(test_rdr, aes(y = lat, x = lon, col = prcp)) + 
+  geom_point(data = test_gpm[id %in% knmi_stations$nearest_cell], aes(y = lat, x = lon, size = prcp), col = "red") +
+  geom_point(data = test_knmi, aes(y = lat, x = lon, size = prcp), col = "yellow") +
+  labs(x = NULL, y = NULL) +
   theme_bw()
 ```
 
-**Monthly heterogeneity**
+**GPM grid cell centers vs. radar cells**
 
+```{r plot radar/grid cells, eval = T}
+ggplot(test_rdr, aes(y = lat, x = lon, col = prcp)) + 
+  geom_point() +
+  geom_point(data = test_gpm[id %in% rdr_cells$nearest_cell], aes(y = lat, x = lon, size = prcp), col = "red") +
+  labs(x = NULL, y = NULL) +
+  theme_bw()
+```
+
+The figures above present daily precipitation on `r my_date`. 
+
+***
+
+**Monthly heterogeneity**
 ```{r plot monthly means, eval = F}
 noa_month_prcp <- noa_prcp[, sum(prcp, na.rm = T), id]  
 colnames(noa_month_prcp)[2] <- "prcp"
