@@ -16,12 +16,24 @@ put_stations_to_cells <- function(stations, cells, cell_dist = 0.5){
 }
 
 #Ranks distances of a matrix of points to a single point (lon, lat)
-dist_rank <- function(x, pt){ #x is c(id, lon, lat) and pt is the point to estimate rank of distances (lon, lat)
+dist_rank <- function(x, pt, km_per_deg = 111){ #x is c(id, lon, lat) and pt is the point to estimate rank of distances (lon, lat)
   set_sp <- SpatialPoints(x[, c('lon', 'lat')])
-  x <- cbind(x, dist = as.numeric(gDistance(set_sp,  SpatialPoints(pt), byid = TRUE)))
-  return(rank(distance, ties.method = "random"))
+  distance <- as.numeric(gDistance(set_sp,  SpatialPoints(pt), byid = TRUE))
+  return(cbind(distance = km_per_deg * distance, rank = rank(distance, ties.method = "random"))) #the output is in km
 }
 
+#Aggregates precipitation from smaller to higher distance rank
+agg_prcp_out <- function(x){  #add error msg for not using rank and number of missing values
+  no_cells = nrow(x)
+  out = matrix(data = NA, no_cells, 3)
+  for(i in 1:no_cells){
+    out[i, ] = c(sum(x[id %in% x[rank <= i, id], prcp], na.rm = T),
+                 mean(x[id %in% x[rank <= i, id], prcp], na.rm = T),
+                 sd(x[id %in% x[rank <= i, id], prcp], na.rm = T))
+  }
+  colnames(out) <- c("sum", "mean", "sd")
+  return(out)
+}
 
 
 

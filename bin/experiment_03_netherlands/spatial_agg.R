@@ -1,11 +1,14 @@
 require(data.table)
+require(ggplot2)
+require(SDMTools)
+
 source("./source/spatial_tools.R")
 load("./data/experiment_3.rdata")  #Created in data_import
 
 #("2016-9-01")("2016-9-04")
 #("2016-9-15")("2016-9-16")
 
-my_date <- as.Date("2016-9-03")
+my_date <- as.Date("2016-9-16")
 test_rdr <- rdr_prcp[time == my_date]
 test_rdr <- merge(test_rdr, rdr_cells)
 
@@ -17,92 +20,140 @@ test_knmi <- merge(test_knmi, knmi_stations)
 test_knmi <- test_knmi[complete.cases(test_knmi)]
 
 ggplot(test_rdr, aes(y = lat, x = lon, col = prcp)) + 
-  geom_point() +
-  geom_point(data = test_gpm[id %in% knmi_stations$nearest_cell], aes(y = lat, x = lon, size = prcp), col = "red") +
-  geom_point(data = test_knmi, aes(y = lat, x = lon, size = prcp), col = "yellow") +
-  theme_bw()
-
-ggplot(test_rdr, aes(y = lat, x = lon, col = prcp)) + 
-  geom_point() +
-  geom_point(data = test_gpm[prcp > 1 & id %in% knmi_stations$nearest_cell], aes(y = lat, x = lon, size = prcp), col = "red") +
-  geom_point(data = test_knmi[prcp > 1], aes(y = lat, x = lon, size = prcp), col = "yellow") +
+  geom_point(data = test_gpm[id %in% knmi_stations$nearest_cell], aes(y = lat, x = lon, size = prcp), col = "orange", alpha = 0.5) +
+  geom_point(data = test_knmi, aes(y = lat, x = lon, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = NULL, y = NULL) +
   theme_bw()
 
 ##Satellite vs station
 
-## pick knmi records that are within gpm cells and estimate the mean per gpm cell
-knmi_prcp_mean_cell <- merge(knmi_stations[, .(id, nearest_cell)], knmi_prcp)
+## pick knmi records that are within gpm cells and estimate the mean per gpm cell (nearest_cell)
+knmi_prcp_mean_cell <- merge(knmi_stations[, .(id, nearest_cell)], knmi_prcp) #Average of station prcp per GPM cell
 knmi_prcp_mean_cell <- knmi_prcp_mean_cell[, mean(prcp, na.rm = T), .(nearest_cell, time)]
 colnames(knmi_prcp_mean_cell) <- c("id", "time", "prcp") 
 
 gpm_knmi_prcp <- gpm_d_prcp[id %in% knmi_stations$nearest_cell]
 
-my_date <- as.Date("2016-9-03")
 gpm_oneday_prcp <- gpm_knmi_prcp[as.Date(time) == my_date]
 knmi_oneday_prcp <- knmi_prcp_mean_cell[as.Date(time) == my_date]
 
 max_prcp_id <- gpm_oneday_prcp[which.max(prcp), id]
-
-## Spatial aggregation from maximum -> outwards
 gpm_cells_knmi <- gpm_d_cells[id %in% gpm_oneday_prcp$id]
-gpm_center <- cbind(lon = gpm_cells_knmi[id == max_prcp_id, lon], lat = gpm_cells_knmi[id == max_prcp_id, lat])
-gpm_cells_knmi$dist_rank <- dist_rank(gpm_cells_knmi, gpm_center)
+gpm_oneday_prcp <- merge(gpm_cells_knmi, gpm_oneday_prcp)[, c(1:3, 5)]
+knmi_oneday_prcp <- merge(gpm_cells_knmi, knmi_oneday_prcp)[, c(1:3, 5)]
 
-for(i in 1:nrow(gpm_cells_knmi)){
-  print(c(mean(gpm_oneday_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp]),
-          min(gpm_oneday_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp])))
-}
+## Spatial aggregation from gpm maximum -> outwards (both data sets at same maximum)
+gpm_center <- cbind(lon = gpm_oneday_prcp[id == max_prcp_id, lon], 
+                    lat = gpm_oneday_prcp[id == max_prcp_id, lat])
+gpm_oneday_prcp <- cbind(gpm_oneday_prcp, 
+                         dist_rank(gpm_oneday_prcp, gpm_center))
+knmi_oneday_prcp <- cbind(knmi_oneday_prcp, 
+                         dist_rank(gpm_oneday_prcp, gpm_center))
 
-for(i in 1:nrow(gpm_cells_knmi)){
-  print(c(mean(knmi_oneday_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp], na.rm = T),
-          min(knmi_oneday_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp], na.rm = T)))
-}
+event_20160903_gpm <- cbind(gpm_oneday_prcp[order(rank)], 
+                            agg_prcp_out(gpm_oneday_prcp))
+event_20160903_knmi <- cbind(knmi_oneday_prcp[order(rank)], 
+                             agg_prcp_out(knmi_oneday_prcp))
 
-## Spatial aggregation from center -> outwards
-gpm_cells_knmi <- gpm_d_cells[id %in% knmi_stations[, unique(nearest_cell)]]
-gpm_center <- cbind(lat = gpm_cells_knmi[, mean(lat)], lon = gpm_cells_knmi[, mean(lon)])
-gpm_cells_knmi$dist_rank <- dist_rank(gpm_cells_knmi, gpm_center)
+ggplot(event_20160903_gpm, aes(distance, sum, size = prcp)) + #Think something about better representing this
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, sum, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation sum (mm)") + 
+  theme_bw()
 
-#daily
-my_date <- as.Date("2016-9-03")
-gpm_oneday_prcp <- gpm_d_prcp[as.Date(time) == my_date]
-knmi_oneday_prcp <- knmi_prcp_mean_cell[as.Date(time) == my_date]
+ggplot(event_20160903_gpm, aes(distance, mean, size = prcp)) + 
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, mean, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation mean (mm)") + 
+  theme_bw()
 
-for(i in 1:nrow(gpm_cells_knmi)){
-  print(c(mean(gpm_oneday_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp]),
-          range(gpm_oneday_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp])))
-}
-for(i in 1:nrow(gpm_cells_knmi)){
-  print(c(mean(knmi_oneday_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp]),
-          range(knmi_oneday_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp])))
-}
+ggplot(event_20160903_gpm, aes(distance, sd, size = prcp)) + 
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, sd, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation sd (mm)") + 
+  theme_bw()
 
-#monthly
-gpm_month_prcp <- gpm_d_prcp[, sum(prcp), id]
-colnames(gpm_month_prcp)[2] <- "prcp"
+## Similar to previous but aggreagation starts at gravity center of 10 highest values
+gpm_oneday_prcp_10 <- gpm_oneday_prcp[tail(order(prcp), 10)]
+gravity_center_10 <- COGravity(gpm_oneday_prcp_10$lon, 
+                               gpm_oneday_prcp_10$lat, 
+                               gpm_oneday_prcp_10$prcp)
 
-for(i in 1:nrow(gpm_cells_knmi)){
-  print(c(mean(gpm_month_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp]),
-          range(gpm_month_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp])))
-}
+gpm_center <- cbind(lon = as.numeric(gravity_center_10[1]),
+                    lat = as.numeric(gravity_center_10[3]))
 
-knmi_month_prcp <- knmi_prcp_mean_cell[, sum(prcp), id]  
-colnames(knmi_month_prcp)[2] <- "prcp"
-for(i in 1:nrow(gpm_cells_knmi)){
-  print(c(mean(knmi_month_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp]),
-          range(knmi_month_prcp[id %in% gpm_cells_knmi[dist_rank <= i, id], prcp])))
-}
+gpm_oneday_prcp_10 <- cbind(gpm_oneday_prcp[, 1:4], 
+                         dist_rank(gpm_oneday_prcp, gpm_center))
+knmi_oneday_prcp_10 <- cbind(knmi_oneday_prcp[, 1:4], 
+                          dist_rank(gpm_oneday_prcp, gpm_center))
+
+event_20160903_gpm <- cbind(gpm_oneday_prcp_10[order(rank)], 
+                            agg_prcp_out(gpm_oneday_prcp_10))
+event_20160903_knmi <- cbind(knmi_oneday_prcp_10[order(rank)], 
+                             agg_prcp_out(knmi_oneday_prcp_10))
+
+ggplot(event_20160903_gpm, aes(distance, sum, size = prcp)) + #Think something about better representing this
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, sum, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation sum (mm)") + 
+  theme_bw()
+
+ggplot(event_20160903_gpm, aes(distance, mean, size = prcp)) + 
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, mean, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation mean (mm)") + 
+  theme_bw()
+
+ggplot(event_20160903_gpm, aes(distance, sd, size = prcp)) + 
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, sd, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation sd (mm)") + 
+  theme_bw()
 
 
+## Similar to previous but aggregation starts at gravity center of each dataset
+gpm_oneday_prcp_10 <- gpm_oneday_prcp[tail(order(prcp), 10)]
+knmi_oneday_prcp_10 <- knmi_oneday_prcp[tail(order(prcp), 10)]
+gravity_center_10_gpm <- COGravity(gpm_oneday_prcp_10$lon, 
+                               gpm_oneday_prcp_10$lat, 
+                               gpm_oneday_prcp_10$prcp)
+
+gpm_center  <- cbind(lon = as.numeric(gravity_center_10[1]),
+                         lat = as.numeric(gravity_center_10[3]))
+
+gravity_center_10_knmi <- COGravity(knmi_oneday_prcp_10$lon, 
+                                    knmi_oneday_prcp_10$lat, 
+                                    knmi_oneday_prcp_10$prcp)
+
+knmi_center  <- cbind(lon = as.numeric(gravity_center_10_knmi[1]),
+                         lat = as.numeric(gravity_center_10_knmi[3]))
 
 
-#the max assign idea
-gpm_test <- gpm_oneday_prcp[id %in% gpm_cells_knmi$id]$prcp
-knmi_test <- knmi_oneday_prcp$prcp
-data.frame(sort(knmi_test) - sort(gpm_test))
+gpm_oneday_prcp_10 <- cbind(gpm_oneday_prcp[, 1:4], 
+                            dist_rank(gpm_oneday_prcp, gpm_center))
+knmi_oneday_prcp_10 <- cbind(knmi_oneday_prcp[, 1:4], 
+                             dist_rank(gpm_oneday_prcp, knmi_center))
 
+event_20160903_gpm <- cbind(gpm_oneday_prcp_10[order(rank)], 
+                            agg_prcp_out(gpm_oneday_prcp_10))
+event_20160903_knmi <- cbind(knmi_oneday_prcp_10[order(rank)], 
+                             agg_prcp_out(knmi_oneday_prcp_10))
 
+ggplot(event_20160903_gpm, aes(distance, sum, size = prcp)) + 
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, sum, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation sum (mm)") + 
+  theme_bw()
 
+ggplot(event_20160903_gpm, aes(distance, mean, size = prcp)) + 
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, mean, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation mean (mm)") + 
+  theme_bw()
 
-
+ggplot(event_20160903_gpm, aes(distance, sd, size = prcp)) + 
+  geom_point(col = "orange", alpha = 0.5) +
+  geom_point(data = event_20160903_knmi, aes(distance, sd, size = prcp), col = "red", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation sd (mm)") + 
+  theme_bw()
 
