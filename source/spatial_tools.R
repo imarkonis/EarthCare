@@ -59,7 +59,7 @@ dist_rank <- function(x, pt, km_per_deg = 111){ #x is c(id, lon, lat) and pt is 
 agg_prcp_out <- function(x){  #add error msg for not using rank and number of missing values
   no_cells = nrow(x)
   out = matrix(data = NA, no_cells, 3)
-  for(i in 1:no_cells){
+  for(i in 1:no_cells){ # this could be done using apply?
     out[i, ] = c(sum(x[id %in% x[rank <= i, id], prcp], na.rm = T),
                  mean(x[id %in% x[rank <= i, id], prcp], na.rm = T),
                  sd(x[id %in% x[rank <= i, id], prcp], na.rm = T))
