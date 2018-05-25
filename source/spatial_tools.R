@@ -2,6 +2,16 @@ require(rgeos)
 require(maptools)
 
 #Find noa stations within gpm grid cells
+#' Title
+#'
+#' @param stations 
+#' @param cells 
+#' @param cell_dist 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 put_stations_to_cells <- function(stations, cells, cell_dist = 0.5){
   set1sp <- SpatialPoints(stations[, c('lon', 'lat')])
   set2sp <- SpatialPoints(cells[, c('lon', 'lat')])
