@@ -1,9 +1,11 @@
 require(rgeos)
 require(maptools)
 
-#Find noa stations within gpm grid cells
+
 #' Title
-#'
+#' 
+#' Find noa stations within gpm grid cells
+#' 
 #' @param stations 
 #' @param cells 
 #' @param cell_dist 
@@ -25,9 +27,11 @@ put_stations_to_cells <- function(stations, cells, cell_dist = 0.5){
   return(stations)
 }
 
-#Ranks distances of a matrix of points to a single point (lon, lat)
+
 #' Title
-#'
+#' 
+#' Ranks distances of a matrix of points to a single point (lon, lat)
+#' 
 #' @param x 
 #' @param pt 
 #' @param km_per_deg 
@@ -42,9 +46,10 @@ dist_rank <- function(x, pt, km_per_deg = 111){ #x is c(id, lon, lat) and pt is 
   return(cbind(distance = km_per_deg * distance, rank = rank(distance, ties.method = "random"))) #the output is in km
 }
 
-#Aggregates precipitation from smaller to higher distance rank
 #' Title
-#'
+#' 
+#' Aggregates precipitation from smaller to higher distance rank
+#' 
 #' @param x 
 #'
 #' @return
