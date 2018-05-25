@@ -26,6 +26,16 @@ put_stations_to_cells <- function(stations, cells, cell_dist = 0.5){
 }
 
 #Ranks distances of a matrix of points to a single point (lon, lat)
+#' Title
+#'
+#' @param x 
+#' @param pt 
+#' @param km_per_deg 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 dist_rank <- function(x, pt, km_per_deg = 111){ #x is c(id, lon, lat) and pt is the point to estimate rank of distances (lon, lat)
   set_sp <- SpatialPoints(x[, c('lon', 'lat')])
   distance <- as.numeric(gDistance(set_sp,  SpatialPoints(pt), byid = TRUE))
@@ -33,6 +43,14 @@ dist_rank <- function(x, pt, km_per_deg = 111){ #x is c(id, lon, lat) and pt is 
 }
 
 #Aggregates precipitation from smaller to higher distance rank
+#' Title
+#'
+#' @param x 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 agg_prcp_out <- function(x){  #add error msg for not using rank and number of missing values
   no_cells = nrow(x)
   out = matrix(data = NA, no_cells, 3)
