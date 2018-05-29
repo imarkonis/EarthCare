@@ -7,7 +7,7 @@ source("./source/import.R")
 source("./source/spatial_tools.R")
 source("./source/paths.R") 
 
-data_gpm_experiment_day_path <- paste0(data_gpm_path, "netherlands/")
+data_gpm_experiment_day_path <- paste0(data_gpm_path, "/netherlands/")
 
 #### GPM daily (KNMI)
 gpm_nc_file <- paste0(data_gpm_experiment_day_path, "imerg_daily_3.37-7.22E_50.66-53.56N.nc")
@@ -23,7 +23,7 @@ rdr = ncdf4::ncvar_get(rdr_nc)
 dimnames(rdr)[[3]] <- rdr_nc$dim$time$vals 
 dimnames(rdr)[[2]] <- rdr_nc$dim$lat$vals 
 dimnames(rdr)[[1]] <- rdr_nc$dim$lon$vals
-rdr <- rdr[, , 2800:2829]
+rdr <- rdr[, , 2800:2829]  ## Record length to be mimported
 kk = ncdf4::nc_close(rdr_nc)
 rdr <- data.table::data.table(reshape2::melt(rdr, varnames = c("lon", "lat", "time"), value.name = "prcp")) 
 rdr$time <- rdr$time + as.Date("2009-01-01")

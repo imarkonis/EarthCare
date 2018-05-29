@@ -110,7 +110,6 @@ ggplot(event_20160903_gpm, aes(distance, sd, size = prcp)) +
   labs(x = "Distance (km)", y = "Precipitation sd (mm)") + 
   theme_bw()
 
-
 ## Similar to previous but aggregation starts at gravity center of each dataset
 gpm_oneday_prcp_10 <- gpm_oneday_prcp[tail(order(prcp), 10)]
 knmi_oneday_prcp_10 <- knmi_oneday_prcp[tail(order(prcp), 10)]
@@ -156,4 +155,14 @@ ggplot(event_20160903_gpm, aes(distance, sd, size = prcp)) +
   geom_point(data = event_20160903_knmi, aes(distance, sd, size = prcp), col = "red", alpha = 0.5) +
   labs(x = "Distance (km)", y = "Precipitation sd (mm)") + 
   theme_bw()
+
+event_20160903_diff <- data.frame(cbind(distance = event_20160903_gpm$distance, diff = event_20160903_gpm$prcp - event_20160903_knmi$prcp))
+event_20160903_diff <- event_20160903_diff[complete.cases(event_20160903_diff), ]
+ggplot(event_20160903_diff, aes(distance, cumsum(diff))) + 
+  geom_point(col = "orange", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation Difference (mm)") + 
+  theme_bw()
+
+
+
 
