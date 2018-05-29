@@ -7,7 +7,7 @@ source("./source/import.R")
 source("./source/spatial_tools.R")
 source("./source/paths.R") 
 
-data_gpm_experiment_day_path <- paste0(data_gpm_path, "netherlands/")
+data_gpm_experiment_day_path <- paste0(data_gpm_path, "/netherlands/")
 
 #### GPM daily (KNMI)
 gpm_nc_file <- paste0(data_gpm_experiment_day_path, "imerg_daily_3.37-7.22E_50.66-53.56N.nc")
