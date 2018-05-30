@@ -1,7 +1,6 @@
 require(rgeos)
 require(maptools)
 
-
 #' Title
 #' 
 #' Find noa stations within gpm grid cells
@@ -26,7 +25,6 @@ put_stations_to_cells <- function(stations, cells, cell_dist = 0.5){
   stations$nearest_cell <- cells[stations$nearest_cell]$id
   return(stations)
 }
-
 
 #' Title
 #' 
@@ -68,11 +66,33 @@ agg_prcp_out <- function(x){  #add error msg for not using rank and number of mi
   return(out)
 }
 
+get_gravity_center <- function(x, no_values = 10){
+  x_tail <- x[tail(order(prcp), no_values)]
+  gravity_center <- COGravity(x_tail$lon, 
+                              x_tail$lat, 
+                              x_tail$prcp)
+  
+  gravity_center  <- cbind(lon = as.numeric(gravity_center[1]),
+                           lat = as.numeric(gravity_center[3]))
+  
+  return(gravity_center)
+}
 
+agg_prcp <- function(x, date, gravity_center){
+  x <- x[time %in% date]
+  x <- cbind(x, dist_rank(x, gravity_center))
+  x <- cbind(x[order(rank)], agg_prcp_out(x))
+  return(x[complete.cases(x), ])
+}
 
-
-
-
+agg_prcp_period <- function(x, period, gravity_center){
+  x_agg <- x[time %in% period, sum(prcp), id]
+  colnames(x_agg)[2] <- "prcp"
+  x <- merge(x_agg, unique(x[, 1:3]))
+  x <- cbind(x, dist_rank(x, gravity_center))
+  x <- cbind(x[order(rank)], agg_prcp_out(x))
+  return(x[complete.cases(x), ])
+}
 
 
 
