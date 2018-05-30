@@ -11,7 +11,6 @@ noa_gpm_compare_plot <- function(gpm_cell){
   g
 }
 
-
 map_plot <- function(..., date = '2016-5-21') {
   
   date <- as.Date(date)
