@@ -11,28 +11,31 @@ noa_gpm_compare_plot <- function(gpm_cell){
   g
 }
 
-map_plot <- function(..., date = '2016-5-21') {
+aux_fun_id_time <- function(df, date, name) {
+  
+  if(!is.null(df)) {
+    
+    df <- df[time == date,]
+    # df[, id := gsub('_.*','', id)]
+    df[, id := name]
+  }
+  
+  df
+}
+
+map_plot <- function(radar = NULL, satelite = NULL, ground = NULL, date = '2017-1-1') {
   
   date <- as.Date(date)
-  poly <- readOGR('./data/gadm36_NLD_0.shp', verbose = F) #####
+  
+  radar <- aux_fun_id_time(df = radar, date, 'radar')
+  satelite <- aux_fun_id_time(df = satelite, date, 'satelite')
+  ground <- aux_fun_id_time(df = ground, date, 'ground')
+  
+  poly <- readOGR('./data/gadm36_NLD_1.shp', verbose = F) #####
   
   poly_f <- suppressMessages(fortify(poly))
   
-  rdr <- rdr_prcp[time == date,]
-  rdr <- rdr[rdr_cells, on = 'id']
-  rdr <- rdr[id %in% knmi_stations$nearest_cell,]
-  rdr[, `:=`(id = 'rdr', time = NULL, nearest_cell = NULL)]
-  
-  gpm <- gpm_d_prcp[time == date,]
-  gpm <- gpm[gpm_d_cells, on = 'id']
-  gpm <- gpm[id %in% knmi_stations$nearest_cell,]
-  gpm[, `:=`(id = 'gpm', time = NULL)]
-  
-  knmi <- knmi_prcp[time == date]
-  knmi <- knmi[knmi_stations, on = 'id']
-  knmi[, `:=`(id = 'knmi', time = NULL, station = NULL, nearest_cell = NULL)]
-  
-  prc_all <- rbind(rdr, gpm, knmi)
+  prc_all <- rbind(radar, satelite, ground)
   
   mp <- ggplot() +
     geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
