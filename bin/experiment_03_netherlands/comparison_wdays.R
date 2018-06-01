@@ -4,6 +4,9 @@ library(data.table)
 load("./data/experiment_3.rdata")  #Created in data_import.R
 load("./data/experiment_3_wdays.rdata") #Created in comparison.R
 
+
+knmi_prcp[, sum(prcp, na.rm = T)]/gpm_knmi_prcp[, sum(prcp, na.rm = T)]
+
 match_wet_days <- match(knmi_wet_days, gpm_wet_days)
 sum(is.na(match_wet_days)) / length(knmi_wet_days) # percentage of wet days missed by satellite
 

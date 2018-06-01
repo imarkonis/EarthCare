@@ -1,4 +1,4 @@
-require(rgeos); require(maptools); require(SDMTools)
+require(rgeos); require(maptools); require(SDMTools); require(data.table)
 
 #' Title
 #' 

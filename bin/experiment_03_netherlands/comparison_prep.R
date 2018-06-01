@@ -19,8 +19,6 @@ rdr_prcp <- merge(gpm_d_cells, rdr_prcp)
 gpm_knmi_prcp <- gpm_d_prcp[id %in% knmi_stations$nearest_cell] #Keep only gpm cells close to station locations
 gpm_rdr_prcp <- gpm_d_prcp[id %in% rdr_cells$nearest_cell] #Keep only gpm cells close to radar cells
 
-knmi_prcp[, sum(prcp, na.rm = T)]/gpm_knmi_prcp[, sum(prcp, na.rm = T)]
-
 ## Determine wet days in stations: at least 5% have precipitation above 1 mm
 wet_percent <- .05
 knmi_prcp_qq_10 <- knmi_prcp[, quantile(prcp, 1 - wet_percent, na.rm = T), time]
