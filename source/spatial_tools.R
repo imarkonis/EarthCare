@@ -86,7 +86,7 @@ agg_prcp <- function(x, date, gravity_center){
 }
 
 agg_prcp_period <- function(x, period, gravity_center){
-  x_agg <- x[time %in% period, sum(prcp), id]
+  x_agg <- x[time %in% period, mean(prcp), id]
   colnames(x_agg)[2] <- "prcp"
   x <- merge(x_agg, unique(x[, 1:3]))
   x <- cbind(x, dist_rank(x, gravity_center))

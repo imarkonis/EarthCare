@@ -8,7 +8,7 @@ if(.Platform$OS.type == 'unix') {
   
   if(Sys.getenv('USERNAME') == 'markonis') {
     
-    data_path <- path.expand('C:/Users/markonis/Documents/Yannis/Various_Proj/Grants/2018ESA_Validation/rawdata')
+    data_path <- path.expand('C:/Users/markonis/Documents/Yannis/ResearchProjects/2018ESA_Validation/rawdata')
   }
 }
 
