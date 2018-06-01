@@ -23,7 +23,7 @@ rdr = ncdf4::ncvar_get(rdr_nc)
 dimnames(rdr)[[3]] <- rdr_nc$dim$time$vals 
 dimnames(rdr)[[2]] <- rdr_nc$dim$lat$vals 
 dimnames(rdr)[[1]] <- rdr_nc$dim$lon$vals
-rdr <- rdr[, , 2700:2829]  ## Record length to be imported
+rdr <- rdr[, , 2465:2829]  ## Record length to be imported
 kk = ncdf4::nc_close(rdr_nc)
 rdr <- data.table::data.table(reshape2::melt(rdr, varnames = c("lon", "lat", "time"), value.name = "prcp")) 
 rdr$time <- rdr$time + as.Date("2009-01-01")
@@ -67,7 +67,7 @@ rm(knmi); gc()
 knmi_stations <- put_stations_to_cells(knmi_stations, gpm_d_cells) 
 rdr_cells <- put_stations_to_cells(rdr_cells, gpm_d_cells) 
 
-save(knmi_stations, knmi_prcp, gpm_d_cells, gpm_d_prcp, rdr_cells, rdr_prcp, file = paste0("./data/experiment_3.rdata"))
+save(knmi_stations, knmi_prcp, gpm_d_cells, gpm_d_prcp, rdr_cells, rdr_prcp, file = "./data/experiment_3.rdata")
 
 #### Reanalysis
 
