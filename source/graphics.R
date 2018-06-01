@@ -23,6 +23,17 @@ aux_fun_id_time <- function(df, date, name) {
   df
 }
 
+#' Title
+#'
+#' @param radar radar data
+#' @param satelite 
+#' @param ground 
+#' @param date 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 map_plot <- function(radar = NULL, satelite = NULL, ground = NULL, date = '2017-1-1') {
   
   date <- as.Date(date)
