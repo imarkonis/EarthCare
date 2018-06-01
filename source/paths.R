@@ -2,7 +2,7 @@ if(.Platform$OS.type == 'unix') {
   
   if(Sys.getenv('USER') == 'phill') {
     
-    data_path <- path.expand('~/Desktop/test') # still just a test directory
+    data_path <- path.expand('~/ownCloud/Data/esa_project')
   }
 } else {
   
