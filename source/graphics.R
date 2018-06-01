@@ -1,4 +1,4 @@
-library(rgdal); library(maptools); library(ggplot2); library(ggsn); library(data.table)
+require(rgdal); require(maptools); require(ggplot2); require(ggsn); require(data.table); require(gridExtra)
 
 noa_gpm_compare_plot <- function(gpm_cell){
   stations <- noa_d_prcp[id %in% noa_stations[nearest_cell == gpm_cell, id]]
