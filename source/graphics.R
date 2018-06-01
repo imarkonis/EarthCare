@@ -35,23 +35,23 @@ aux_fun_id_time <- function(df, date, name) {
 #' @export
 #'
 #' @examples
-
 map_plot <- function(radar = NULL, satellite = NULL, ground = NULL, date = '2016-1-1') {
   
   date <- as.Date(date)
   
-  ## data.table manipulation in order to get str: 'id', 'time' 'prcp', 'lon', 'lat'
-  radar <- aux_fun_id_time(df = radar, date, 'radar')
-  satellite <- aux_fun_id_time(df = satellite, date, 'satellite')
-  ground <- aux_fun_id_time(df = ground, date, 'ground')
+  dta_src <- c('radar', 'satellite', 'ground') ## string vector containg all available data sources (same as all possible data arguments)
   
   ## load spatial data & convert it to data.frame
   poly <- readOGR('./data/geodata/gadm36_NLD_1.shp', verbose = F) #####
   poly_f <- suppressMessages(fortify(poly))
+  
+  ## data.table manipulation in order to get str: 'id', 'time' 'prcp', 'lon', 'lat'
+  prc_list <- lapply(seq_along(dta_src), function(i, ...) {aux_fun_id_time(df = get(dta_src[i]), date = date, name = dta_src[i])})
 
   ## bind all available datasources to one data.frame
-  prc_all <- rbind(radar, satellite, ground)
-  prc_all[, id := factor(id, levels = c('radar', 'satellite', 'ground'))]
+  prc_all <- rbindlist(prc_list)
+  prc_all[, id := factor(id, levels = dta_src)]
+
   
   ## select colours
   cols <- c('dark green', 'orange', 'red')
@@ -62,9 +62,7 @@ map_plot <- function(radar = NULL, satellite = NULL, ground = NULL, date = '2016
     geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
     geom_point(data = prc_all, aes(y = lat, x = lon, size = prcp, col = id), alpha = 0.5) +
     theme_bw() +
-
     scale_color_manual(values = cols, name = 'Data \nsource') +
-
     scale_size_continuous(name = 'Precipitation') +
     scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
     scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
