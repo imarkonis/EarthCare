@@ -23,7 +23,7 @@ rdr = ncdf4::ncvar_get(rdr_nc)
 dimnames(rdr)[[3]] <- rdr_nc$dim$time$vals 
 dimnames(rdr)[[2]] <- rdr_nc$dim$lat$vals 
 dimnames(rdr)[[1]] <- rdr_nc$dim$lon$vals
-rdr <- rdr[, , 2700:2829]  ## Record length to be imported
+rdr <- rdr[, , 2465:2829]  ## Record length to be imported
 kk = ncdf4::nc_close(rdr_nc)
 rdr <- data.table::data.table(reshape2::melt(rdr, varnames = c("lon", "lat", "time"), value.name = "prcp")) 
 rdr$time <- rdr$time + as.Date("2009-01-01")
