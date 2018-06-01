@@ -41,7 +41,7 @@ map_plot <- function(radar = NULL, satelite = NULL, ground = NULL, date = '2017-
     geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
     geom_point(data = prc_all, aes(y = lat, x = lon, size = prcp, col = id), alpha = 0.5) +
     theme_bw() +
-    scale_color_manual(values = c('red4', 'steelblue4', 'limegreen'), name = 'Data \nsource') +
+    scale_color_manual(values = c('red', 'steelblue4', 'limegreen'), name = 'Data \nsource') +
     scale_size_continuous(name = 'Precipitation') +
     scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
     scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
