@@ -23,6 +23,17 @@ aux_fun_id_time <- function(df, date, name) {
   df
 }
 
+#' Title #####
+#'
+#' @param radar radar data
+#' @param satelite 
+#' @param ground 
+#' @param date 
+#'
+#' @return
+#' @export
+#'
+#' @examples
 map_plot <- function(radar = NULL, satelite = NULL, ground = NULL, date = '2017-1-1') {
   
   date <- as.Date(date)
@@ -31,7 +42,7 @@ map_plot <- function(radar = NULL, satelite = NULL, ground = NULL, date = '2017-
   satelite <- aux_fun_id_time(df = satelite, date, 'satelite')
   ground <- aux_fun_id_time(df = ground, date, 'ground')
   
-  poly <- readOGR('./data/gadm36_NLD_1.shp', verbose = F) #####
+  poly <- readOGR('./data/geodata/gadm36_NLD_1.shp', verbose = F) #####
   
   poly_f <- suppressMessages(fortify(poly))
   
