@@ -50,11 +50,11 @@ map_plot <- function(radar = NULL, satellite = NULL, ground = NULL, date = '2016
   poly_f <- suppressMessages(fortify(poly))
 
   ## bind all available datasources to one data.frame
-  prc_all <- rbind(radar, satelite, ground)
-  prc_all[, id := factor(id, levels = c('radar', 'satelite', 'ground'))]
+  prc_all <- rbind(radar, satellite, ground)
+  prc_all[, id := factor(id, levels = c('radar', 'satellite', 'ground'))]
   
   ## select colours
-  cols <- c('red', 'dark orange', 'dark green')
+  cols <- c('dark green', 'orange', 'red')
   names(cols) <- levels(prc_all[, id])
   
   ## plot
