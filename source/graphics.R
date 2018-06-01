@@ -35,25 +35,25 @@ aux_fun_id_time <- function(df, date, name) {
 #' @export
 #'
 #' @examples
-map_plot <- function(radar = NULL, satelite = NULL, ground = NULL, date = '2017-1-1') {
+map_plot <- function(radar = NULL, satellite = NULL, ground = NULL, date = '2017-1-1') {
   
   date <- as.Date(date)
   
   radar <- aux_fun_id_time(df = radar, date, 'radar')
-  satelite <- aux_fun_id_time(df = satelite, date, 'satelite')
+  satellite <- aux_fun_id_time(df = satellite, date, 'satellite')
   ground <- aux_fun_id_time(df = ground, date, 'ground')
   
   poly <- readOGR('./data/geodata/gadm36_NLD_1.shp', verbose = F) #####
   
   poly_f <- suppressMessages(fortify(poly))
   
-  prc_all <- rbind(radar, satelite, ground)
+  prc_all <- rbind(radar, satellite, ground)
   
   mp <- ggplot() +
     geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
     geom_point(data = prc_all, aes(y = lat, x = lon, size = prcp, col = id), alpha = 0.5) +
     theme_bw() +
-    scale_color_manual(values = c('red', 'steelblue4', 'limegreen'), name = 'Data \nsource') +
+    scale_color_manual(values = c('red', 'dark orange', 'dark green'), name = 'Data \nsource') +
     scale_size_continuous(name = 'Precipitation') +
     scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
     scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
