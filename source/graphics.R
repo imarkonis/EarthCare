@@ -23,7 +23,7 @@ aux_fun_id_time <- function(df, date, name) {
   df
 }
 
-#' Title
+#' Title #####
 #'
 #' @param radar radar data
 #' @param satelite 
