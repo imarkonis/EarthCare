@@ -35,6 +35,6 @@ rdr_prcp <- rdr_prcp[time %in% knmi_wet_days]
 gpm_knmi_prcp <- merge(gpm_d_cells, gpm_knmi_prcp)
 gpm_rdr_prcp <- merge(gpm_d_cells, gpm_rdr_prcp)
 
-save(knmi_prcp, gpm_knmi_prcp, gpm_rdr_prcp, file = "./data/experiment_3_main.rdata")
+save(knmi_prcp, gpm_knmi_prcp, rdr_prcp, gpm_rdr_prcp, file = "./data/experiment_3_main.rdata")
 save(knmi_wet_days, gpm_wet_days, gpm_knmi_prcp, file = "./data/experiment_3_wdays.rdata")
 rm(knmi_wet_days, gpm_wet_days, knmi_prcp_qq_10, gpm_prcp_qq_10); gc()

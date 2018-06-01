@@ -1,4 +1,5 @@
 source("./source/graphics.R")
+source("./source/spatial_tools.R")
 load("./data/experiment_3_main.rdata")  
 
 ## Aggregation example for each day of 2016-09
