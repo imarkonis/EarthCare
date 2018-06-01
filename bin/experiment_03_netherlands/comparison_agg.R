@@ -6,12 +6,6 @@ load("./data/experiment_3_main.rdata")
 my_date <- as.Date("2016-09-15")
 
 gravity_center_gpm <- get_gravity_center(gpm_knmi_prcp[time %in% my_date & prcp], 50)
-gravity_center_knmi <- get_gravity_center(knmi_prcp[time %in% my_date & prcp], 50)
-gravity_center_rdr <- get_gravity_center(rdr_prcp[time %in% my_date & prcp], 50)
-
-gDistance(SpatialPoints(gravity_center_gpm), SpatialPoints(gravity_center_knmi)) * 111
-gDistance(SpatialPoints(gravity_center_gpm), SpatialPoints(gravity_center_rdr)) * 111
-gDistance(SpatialPoints(gravity_center_knmi), SpatialPoints(gravity_center_rdr)) * 111
 
 prcp_day_gpm_knmi <- agg_prcp(gpm_knmi_prcp, my_date, gravity_center_gpm)
 prcp_day_gpm_rdr <- agg_prcp(gpm_rdr_prcp, my_date, gravity_center_gpm)
@@ -25,33 +19,28 @@ ggplot(prcp_day_gpm_knmi, aes(distance, sum, size = prcp)) +
   theme_bw()
 
 ggplot(prcp_day_gpm_rdr, aes(distance, sum, size = prcp)) + 
-  geom_point(col = "tan4", alpha = 0.5) +
+  geom_point(col = "orange", alpha = 0.5) +
   geom_point(data = prcp_day_rdr, aes(distance, sum, size = prcp), col = "dark green", alpha = 0.5) +
   labs(x = "Distance (km)", y = "Precipitation sum (mm)") + 
   theme_bw()
 
-ggplot(prcp_day_gpm_knmi, aes(distance, mean, size = prcp)) + 
+ggplot(prcp_day_gpm_rdr, aes(distance, mean, size = prcp)) + 
   geom_point(col = "orange", alpha = 0.5) +
-  geom_point(data = prcp_day_gpm_rdr, aes(distance, mean, size = prcp), col = "tan4", alpha = 0.5) +
   geom_point(data = prcp_day_knmi, aes(distance, mean, size = prcp), col = "red", alpha = 0.5) +
   geom_point(data = prcp_day_rdr, aes(distance, mean, size = prcp), col = "dark green", alpha = 0.5) +
   labs(x = "Distance (km)", y = "Precipitation mean (mm)") + 
   theme_bw()
 
-ggplot(prcp_day_gpm_knmi, aes(distance, sd/mean, size = prcp)) + 
+ggplot(prcp_day_gpm_rdr, aes(distance, sd, size = prcp)) + 
   geom_point(col = "orange", alpha = 0.5) +
-  geom_point(data = prcp_day_gpm_rdr, aes(distance, sd/mean, size = prcp), col = "tan4", alpha = 0.5) +
-  geom_point(data = prcp_day_knmi, aes(distance, sd/mean, size = prcp), col = "red", alpha = 0.5) +
-  geom_point(data = prcp_day_rdr, aes(distance, sd/mean, size = prcp), col = "dark green", alpha = 0.5) +
-  labs(x = "Distance (km)", y = "Precipitation CoV") + 
+  geom_point(data = prcp_day_knmi, aes(distance, sd, size = prcp), col = "red", alpha = 0.5) +
+  geom_point(data = prcp_day_rdr, aes(distance, sd, size = prcp), col = "dark green", alpha = 0.5) +
+  labs(x = "Distance (km)", y = "Precipitation St. Dev.") + 
   theme_bw()
 
-ggplot(prcp_day_gpm_rdr, aes(y = lat, x = lon, size = prcp)) + 
-  geom_point(col = "orange") +
-  geom_point(data = prcp_day_rdr, aes(y = lat, x = lon, size = prcp), col = "dark green", alpha = 0.5) +
-  geom_point(data = prcp_day_knmi, aes(y = lat, x = lon, size = prcp), col = "red", alpha = 0.5) +
-  labs(x = NULL, y = NULL) +
-  theme_bw()
+map_plot(ground = prcp_day_knmi, date = my_date)
+map_plot(radar = prcp_day_rdr, date = my_date)
+map_plot(satellite = prcp_day_gpm_rdr, date = my_date)
 
 ## Aggregation in time
 my_period = rdr_prcp[, unique(time)]
@@ -60,12 +49,6 @@ for(i in 1:length(my_period)){
   aa <- gpm_knmi_prcp[time %in% my_period, sum(prcp, na.rm = T), .(lon, lat)]
   colnames(aa)[3] <- "prcp"
   gravity_center_gpm <- get_gravity_center(aa, 50)
-  #gravity_center_knmi <- get_gravity_center(knmi_prcp[time %in% my_date], 50)
-  #gravity_center_rdr <- get_gravity_center(rdr_prcp[time %in% my_date], 50)
-  
-  #  print(c(gDistance(SpatialPoints(gravity_center_gpm), SpatialPoints(gravity_center_knmi)) * 111,
-  #          gDistance(SpatialPoints(gravity_center_gpm), SpatialPoints(gravity_center_rdr)) * 111))
-  #prcp_period_gpm_knmi <- agg_prcp_period(gpm_knmi_prcp, period, gravity_center_gpm)
   prcp_period_gpm_rdr <- agg_prcp_period(gpm_rdr_prcp, period, gravity_center_gpm)
   prcp_period_knmi <- agg_prcp_period(knmi_prcp, period, gravity_center_gpm)
   prcp_period_rdr <- agg_prcp_period(rdr_prcp, period, gravity_center_gpm)
@@ -73,8 +56,6 @@ for(i in 1:length(my_period)){
   p1 <- ggplot(prcp_period_gpm_rdr, aes(distance, mean)) + 
     geom_smooth(col = "orange", size = 1, alpha = 0.5, se = F, span = 0.3) +
     geom_point(col = "orange", size = 1, alpha = 0.1) +
-    #geom_smooth(data = prcp_period_gpm_rdr, aes(distance, mean), col = "tan4", size = 1, alpha = 0.5, se = F, span = 0.3) +
-    #geom_point(data = prcp_period_gpm_rdr, aes(distance, mean), col = "tan4", size = 1, alpha = 0.1) +
     geom_smooth(data = prcp_period_knmi, aes(distance, mean), col = "red", size = 1, alpha = 0.5, se = F, span = 0.3) +
     geom_point(data = prcp_period_knmi, aes(distance, mean), col = "red", size = 1, alpha = 0.1) +
     geom_smooth(data = prcp_period_rdr, aes(distance, mean), col = "dark green", size = 1, alpha = 0.5, se = F, span = 0.3) +
@@ -86,8 +67,6 @@ for(i in 1:length(my_period)){
   p2 <- ggplot(prcp_period_gpm_rdr, aes(distance, sd)) + 
     geom_smooth(col = "orange", size = 1, alpha = 0.5, se = F) +
     geom_point(col = "orange", size = 1, alpha = 0.1) +
-    #geom_smooth(data = prcp_period_gpm_rdr, aes(distance, sd), col = "tan4", size = 1, alpha = 0.5, se = F, span = 0.2) +
-    #geom_point(data = prcp_period_gpm_rdr, aes(distance, sd), col = "tan4", size = 1, alpha = 0.1) +
     geom_smooth(data = prcp_period_knmi, aes(distance, sd), col = "red", size = 1, alpha = 0.5, se = F, span = 0.2) +
     geom_point(data = prcp_period_knmi, aes(distance, sd), col = "red", size = 1, alpha = 0.1) +
     geom_smooth(data = prcp_period_rdr, aes(distance, sd), col = "dark green", size = 1, alpha = 0.5, se = F, span = 0.2) +
@@ -108,6 +87,7 @@ ggplot(prcp_period_gpm_rdr, aes(log10(distance), log10(sum))) +
   geom_line(data = prcp_period_rdr, aes(log10(distance), log10(sum)), col = "dark green", size = 1, alpha = 0.5) +
   labs(x = "Distance (km)", y = "Precipitation sum (mm)") + 
   theme_bw()
+
 ##light, mnoderate and heavy precipitation 0, 2.5, 7.5
 #period
 my_period = rdr_prcp[, unique(time)]
@@ -178,4 +158,17 @@ for(i in 1:length(my_period)){
   print(grid.arrange(p1, p2, nrow = 2))
 } 
 
+
+
+##Comparison of gravity Centers
+
+gravity_center_knmi <- get_gravity_center(knmi_prcp[time %in% my_date & prcp], 50)
+gravity_center_rdr <- get_gravity_center(rdr_prcp[time %in% my_date & prcp], 50)
+
+gDistance(SpatialPoints(gravity_center_gpm), SpatialPoints(gravity_center_knmi)) * 111
+gDistance(SpatialPoints(gravity_center_gpm), SpatialPoints(gravity_center_rdr)) * 111
+gDistance(SpatialPoints(gravity_center_knmi), SpatialPoints(gravity_center_rdr)) * 111
+
 #Can also compare sums of light vs heavy as light cells are more
+
+
