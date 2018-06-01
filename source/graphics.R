@@ -1,4 +1,4 @@
-library(rgdal); library(maptools); library(ggplot2); library(ggsn); library(data.table)
+require(rgdal); require(maptools); require(ggplot2); require(ggsn); require(data.table); require(gridExtra)
 
 noa_gpm_compare_plot <- function(gpm_cell){
   stations <- noa_d_prcp[id %in% noa_stations[nearest_cell == gpm_cell, id]]
@@ -23,7 +23,8 @@ aux_fun_id_time <- function(df, date, name) {
   df
 }
 
-#' Conflict
+
+#' Title #####
 #'
 #' @param radar radar data
 #' @param satelite 
@@ -52,7 +53,7 @@ map_plot <- function(radar = NULL, satelite = NULL, ground = NULL, date = '2017-
     geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
     geom_point(data = prc_all, aes(y = lat, x = lon, size = prcp, col = id), alpha = 0.5) +
     theme_bw() +
-    scale_color_manual(values = c('red4', 'steelblue4', 'limegreen'), name = 'Data \nsource') +
+    scale_color_manual(values = c('red', 'steelblue4', 'limegreen'), name = 'Data \nsource') +
     scale_size_continuous(name = 'Precipitation') +
     scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
     scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +

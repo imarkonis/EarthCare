@@ -1,8 +1,3 @@
-require(data.table)
-require(ggplot2)
-require(SDMTools)
-require(gridExtra)
-
 source("./source/graphics.R")
 source("./source/spatial_tools.R")
 load("./data/experiment_3.rdata")  #Created in data_import

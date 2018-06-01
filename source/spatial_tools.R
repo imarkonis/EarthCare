@@ -1,5 +1,4 @@
-require(rgeos)
-require(maptools)
+require(rgeos); require(maptools); require(SDMTools)
 
 #' Title
 #' 
