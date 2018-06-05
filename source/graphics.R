@@ -11,7 +11,9 @@ noa_gpm_compare_plot <- function(gpm_cell){
   g
 }
 
-aux_fun_id_time <- function(df, date, name) {
+aux_fun_id_time <- function(df, 
+                            date, 
+                            name) {
   
   if(!is.null(df)) {
     
@@ -35,7 +37,10 @@ aux_fun_id_time <- function(df, date, name) {
 #' @export
 #'
 #' @examples
-map_plot <- function(radar = NULL, satellite = NULL, ground = NULL, date = '2016-1-1') {
+map_plot <- function(radar = NULL, 
+                     satellite = NULL, 
+                     ground = NULL, 
+                     date = '2016-1-1') {
   
   date <- as.Date(date)
   
@@ -72,3 +77,60 @@ map_plot <- function(radar = NULL, satellite = NULL, ground = NULL, date = '2016
   
   return(mp)
 }
+
+desc_stat <- function(dta,
+                      period = c('2015-9-1', '2016-10-1'),
+                      wet_par = c(.5, 1)) {
+  
+  period <- as.Date(period)
+  
+  wet_dta <- dta[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  
+  stat <- wet_dta[, .(mean = mean(prcp, na.rm = TRUE),
+                      min = min(prcp, na.rm = TRUE),
+                      q_05 = quantile(prcp, .05, na.rm = TRUE),
+                      q_25 = quantile(prcp, .25, na.rm = TRUE),
+                      median = median(prcp, na.rm = TRUE),
+                      q_75 = quantile(prcp, .75, na.rm = TRUE),
+                      q_95 = quantile(prcp, .95, na.rm = TRUE),
+                      max = max(prcp, na.rm = TRUE),
+                      strd = sd(prcp, na.rm = TRUE),
+                      coef_var = sd(prcp, na.rm = TRUE)/mean(prcp, na.rm = TRUE),
+                      iqr = IQR(prcp, na.rm = TRUE))]
+  
+  t(stat)
+  
+}
+
+ggcdf <- function(dta, 
+                  period = c('2015-9-1', '2016-10-1'),
+                  seasonality = 4) {
+  
+  period <- as.Date(period)
+  
+  dta[, seasons := rep(1:seasonality, each = length(time)/seasonality), by = id]
+  
+  wet_dta <- dta[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  
+  cdf <- ggplot() +
+    stat_ecdf(data = wet_dta, aes(x = prcp, group = seasons, colour = factor(seasons)))
+  
+  return(cdf)
+}
+
+ggbox <- function(dta, 
+                  period = c('2015-9-1', '2016-10-1'),
+                  seasonality = 'month') {
+  
+  period <- as.Date(period)
+  
+  dta[, mnth := do.call(seasonality, list(time))]
+  
+  wet_dta <- dta[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  
+  ggb <- ggplot() +
+    geom_boxplot(data = wet_dta, aes(x = mnth, y = prcp, group = mnth))
+  
+  return(ggb)
+}
+
