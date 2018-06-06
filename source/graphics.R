@@ -79,7 +79,7 @@ map_plot <- function(radar = NULL,
 }
 
 desc_stat <- function(dta,
-                      period = c('2015-9-1', '2016-10-1'),
+                      period = c('2015-10-1', '2016-9-1'),
                       wet_par = c(.5, 1)) {
   
   period <- as.Date(period)
@@ -103,7 +103,8 @@ desc_stat <- function(dta,
 }
 
 ggcdf <- function(dta, 
-                  period = c('2015-9-1', '2016-10-1'),
+                  period = c('2015-10-1', '2016-9-1'),
+                  wet_par = c(.5, 1),
                   seasonality = 4) {
   
   period <- as.Date(period)
@@ -118,19 +119,36 @@ ggcdf <- function(dta,
   return(cdf)
 }
 
-ggbox <- function(dta, 
-                  period = c('2015-9-1', '2016-10-1'),
+ggbox <- function(radar = NULL, 
+                  satellite = NULL, 
+                  ground = NULL, 
+                  period = c('2015-10-1', '2016-9-1'),
+                  wet_par = c(.5, 1),
                   seasonality = 'month') {
   
   period <- as.Date(period)
   
-  dta[, mnth := do.call(seasonality, list(time))]
+  dta_src <- c('radar', 'satellite', 'ground') ## string vector containg all available data sources (same as all possible data arguments)
   
-  wet_dta <- dta[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  dta <- mget(dta_src)
+  dta <- dta[sapply(dta, function(x) !is.null(x))]
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  
+  dta_all <- rbindlist(dta)
+  dta_all[, mnth := do.call(seasonality, list(time))]
+  
+  dta_all[, id := factor(id, levels = dta_src)]
+  
+  wet_dta <- dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1]
+  
+  cols <- c('red', 'dark orange', 'dark green')
+  names(cols) <- levels(dta_all[, id])
   
   ggb <- ggplot() +
-    geom_boxplot(data = wet_dta, aes(x = mnth, y = prcp, group = mnth))
+    geom_boxplot(data = wet_dta, aes(x = factor(mnth), y = prcp, fill = id)) +
+    scale_fill_manual(values = cols, name = 'Data \nsource') +
+    theme_bw() +
+    labs(x = 'Month', y = 'precipitation')
   
-  return(ggb)
+  ggb
 }
-
