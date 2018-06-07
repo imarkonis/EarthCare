@@ -11,6 +11,21 @@ noa_gpm_compare_plot <- function(gpm_cell){
   g
 }
 
+getSeason <- function(dates) {
+  
+  WS <- as.Date('2012-12-15', format = '%Y-%m-%d') # Winter Solstice
+  SE <- as.Date('2012-3-15',  format = '%Y-%m-%d') # Spring Equinox
+  SS <- as.Date('2012-6-15',  format = '%Y-%m-%d') # Summer Solstice
+  FE <- as.Date('2012-9-15',  format = '%Y-%m-%d') # Fall Equinox
+  
+  # Convert dates from any year to 2012 dates
+  d <- as.Date(strftime(dates, format ='2012-%m-%d'))
+  
+  ifelse (d >= WS | d < SE, 'Winter',
+          ifelse (d >= SE & d < SS, 'Spring',
+                  ifelse (d >= SS & d < FE, 'Summer', 'Fall')))
+}
+
 aux_fun_id_time <- function(df, 
                             date, 
                             name) {
@@ -78,57 +93,86 @@ map_plot <- function(radar = NULL,
   return(mp)
 }
 
-desc_stat <- function(dta,
+desc_stat <- function(Radar = NULL, 
+                      Satellite = NULL, 
+                      Ground = NULL, 
                       period = c('2015-10-1', '2016-9-1'),
                       wet_par = c(.5, 1)) {
   
   period <- as.Date(period)
   
-  wet_dta <- dta[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
   
-  stat <- wet_dta[, .(mean = mean(prcp, na.rm = TRUE),
-                      min = min(prcp, na.rm = TRUE),
-                      q_05 = quantile(prcp, .05, na.rm = TRUE),
-                      q_25 = quantile(prcp, .25, na.rm = TRUE),
-                      median = median(prcp, na.rm = TRUE),
-                      q_75 = quantile(prcp, .75, na.rm = TRUE),
-                      q_95 = quantile(prcp, .95, na.rm = TRUE),
-                      max = max(prcp, na.rm = TRUE),
-                      strd = sd(prcp, na.rm = TRUE),
-                      coef_var = sd(prcp, na.rm = TRUE)/mean(prcp, na.rm = TRUE),
-                      iqr = IQR(prcp, na.rm = TRUE))]
+  dta <- mget(dta_src)
+  dta <- dta[sapply(dta, function(x) !is.null(x))]
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
   
-  t(stat)
+  dta_all <- rbindlist(dta)
+  dta_all[, id := factor(id, levels = dta_src)]
   
+  wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
+  
+  stat <- wet_dta[, .(`Mean` = mean(prcp, na.rm = TRUE),
+                      `Minimum` = min(prcp, na.rm = TRUE),
+                      `5% Quantile` = quantile(prcp, .05, na.rm = TRUE),
+                      `25% Quantile` = quantile(prcp, .25, na.rm = TRUE),
+                      `Median` = median(prcp, na.rm = TRUE),
+                      `75% Quantile` = quantile(prcp, .75, na.rm = TRUE),
+                      `95% Quantile` = quantile(prcp, .95, na.rm = TRUE),
+                      `Maximum` = max(prcp, na.rm = TRUE),
+                      `Standard Deviation` = sd(prcp, na.rm = TRUE),
+                      `Coeficient of Variation` = sd(prcp, na.rm = TRUE)/mean(prcp, na.rm = TRUE),
+                      `Interquartile Range` = IQR(prcp, na.rm = TRUE)),
+                  by = id]
+  
+  stat <- setNames(as.data.frame(round(t(stat[, !'id', with = F]), digits = 2)), as.character(stat[,id]))
+  stat
 }
 
-ggcdf <- function(dta, 
+ggcdf <- function(Radar = NULL, 
+                  Satellite = NULL, 
+                  Ground = NULL, 
                   period = c('2015-10-1', '2016-9-1'),
-                  wet_par = c(.5, 1),
-                  seasonality = 4) {
+                  wet_par = c(.5, 1)) {
   
   period <- as.Date(period)
   
-  dta[, seasons := rep(1:seasonality, each = length(time)/seasonality), by = id]
+  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
   
-  wet_dta <- dta[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  dta <- mget(dta_src)
+  dta <- dta[sapply(dta, function(x) !is.null(x))]
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  
+  dta_all <- rbindlist(dta)
+  dta_all[, id := factor(id, levels = dta_src)]
+  
+  wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
+  wet_dta <- wet_dta[, seasons := getSeason(time)]
+  
+  cols <- c('red', 'dark orange', 'dark green')
+  names(cols) <- levels(dta_all[, id])
   
   cdf <- ggplot() +
-    stat_ecdf(data = wet_dta, aes(x = prcp, group = seasons, colour = factor(seasons)))
+    stat_ecdf(data = wet_dta, aes(x = prcp, y = -log(-log(..y..)), group = id, colour = id)) +
+    facet_wrap(~seasons) +
+    scale_colour_manual(values = cols, name = 'Data \nsource') +
+    theme_bw() +
+    theme(strip.background = element_blank()) +
+    labs(x = 'Precipitation', y = expression(-log(-log(p))), title = 'Transformed seasonal empirical distribution functions')
   
-  return(cdf)
+  cdf
 }
 
-ggbox <- function(radar = NULL, 
-                  satellite = NULL, 
-                  ground = NULL, 
+ggbox <- function(Radar = NULL, 
+                  Satellite = NULL, 
+                  Ground = NULL, 
                   period = c('2015-10-1', '2016-9-1'),
                   wet_par = c(.5, 1),
                   seasonality = 'month') {
   
   period <- as.Date(period)
   
-  dta_src <- c('radar', 'satellite', 'ground') ## string vector containg all available data sources (same as all possible data arguments)
+  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
@@ -139,16 +183,17 @@ ggbox <- function(radar = NULL,
   
   dta_all[, id := factor(id, levels = dta_src)]
   
-  wet_dta <- dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1]
+  wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
   
   cols <- c('red', 'dark orange', 'dark green')
   names(cols) <- levels(dta_all[, id])
   
   ggb <- ggplot() +
-    geom_boxplot(data = wet_dta, aes(x = factor(mnth), y = prcp, fill = id)) +
+    geom_boxplot(data = na.omit(wet_dta), aes(x = factor(mnth), y = prcp, fill = id)) +
     scale_fill_manual(values = cols, name = 'Data \nsource') +
+    scale_y_log10() +
     theme_bw() +
-    labs(x = 'Month', y = 'precipitation')
+    labs(x = 'Month', y = 'Precipitation \nlog-scale', title = 'Monthly precipitation box-plots of wet days')
   
   ggb
 }
