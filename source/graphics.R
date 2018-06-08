@@ -11,6 +11,21 @@ noa_gpm_compare_plot <- function(gpm_cell){
   g
 }
 
+points_to_provinces <- function(stations,
+                                polyg) {
+  
+  coordinates(stations) <- ~ lon + lat
+  proj4string(stations) <- proj4string(poly)
+  
+  aux <- over(poly, stations, returnList = T)
+  
+  names(aux) <- poly@data$NAME_1
+  
+  out <- as.data.table(rbindlist(aux, idcol = T))
+  out[,.(.id ,id)]
+  
+}
+
 getSeason <- function(dates) {
   
   WS <- as.Date('2012-12-15', format = '%Y-%m-%d') # Winter Solstice
@@ -233,4 +248,51 @@ wet_days_plot <- function(Radar = NULL,
     coord_fixed(20)
   
   wd
+}
+
+wet_days_provinces <- function(Radar = NULL,
+                               Satellite = NULL,
+                               Ground = NULL,
+                               Radar_cells = NULL,
+                               Satellite_cells = NULL,
+                               Ground_cells = NULL,
+                               spatial_polygon,
+                               period = c('2015-10-1', '2016-9-1'),
+                               wet_par = c(.05, 1)) {
+  
+  period <- as.Date(period)
+  
+  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
+  
+  dta <- mget(dta_src)
+  dta <- dta[sapply(dta, function(x) !is.null(x))]
+  
+  dta <- lapply(seq_along(dta), function(i)merge(dta[[i]], points_to_provinces(get(paste0(dta_src[i], '_cells')), spatial_polygon)))
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  
+  dta_all <- rbindlist(dta)
+  
+  dta_all[, id := factor(id, levels = dta_src)]
+  
+  wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
+  
+  setkey(wet_dta)
+  wet_days <- unique(wet_dta[, .(id, time, .id)])
+  
+  cols <- c('red', 'dark orange', 'dark green')
+  names(cols) <- levels(dta_all[, id])
+  
+  wdp <- ggplot() +
+    geom_tile(data = wet_days, aes(x = time, y = id, fill = id)) +
+    scale_fill_manual(values = cols, name = 'Data \nsource') +
+    theme_bw() +
+    labs(x = 'Days', title = 'Wet days in Provinces') +
+    coord_fixed(20) +
+    facet_wrap(~.id, ncol = 1) +
+    theme(strip.background = element_blank(),
+          axis.title.y = element_blank(),
+          axis.text.y = element_blank(),
+          axis.ticks.y = element_blank())
+  
+  wdp
 }
