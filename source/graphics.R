@@ -97,7 +97,7 @@ desc_stat <- function(Radar = NULL,
                       Satellite = NULL, 
                       Ground = NULL, 
                       period = c('2015-10-1', '2016-9-1'),
-                      wet_par = c(.5, 1)) {
+                      wet_par = c(.05, 1)) {
   
   period <- as.Date(period)
   
@@ -133,7 +133,7 @@ ggcdf <- function(Radar = NULL,
                   Satellite = NULL, 
                   Ground = NULL, 
                   period = c('2015-10-1', '2016-9-1'),
-                  wet_par = c(.5, 1)) {
+                  wet_par = c(.05, 1)) {
   
   period <- as.Date(period)
   
@@ -154,7 +154,7 @@ ggcdf <- function(Radar = NULL,
   
   cdf <- ggplot() +
     stat_ecdf(data = wet_dta, aes(x = prcp, y = -log(-log(..y..)), group = id, colour = id)) +
-    facet_wrap(~seasons) +
+    facet_wrap(~seasons, nrow = 2) +
     scale_colour_manual(values = cols, name = 'Data \nsource') +
     theme_bw() +
     theme(strip.background = element_blank()) +
@@ -167,7 +167,7 @@ ggbox <- function(Radar = NULL,
                   Satellite = NULL, 
                   Ground = NULL, 
                   period = c('2015-10-1', '2016-9-1'),
-                  wet_par = c(.5, 1),
+                  wet_par = c(.05, 1),
                   seasonality = 'month') {
   
   period <- as.Date(period)
@@ -196,4 +196,41 @@ ggbox <- function(Radar = NULL,
     labs(x = 'Month', y = 'Precipitation \nlog-scale', title = 'Monthly precipitation box-plots of wet days')
   
   ggb
+}
+
+
+wet_days_plot <- function(Radar = NULL,
+                          Satellite = NULL,
+                          Ground = NULL,
+                          period = c('2015-10-1', '2016-9-1'),
+                          wet_par = c(.05, 1)) {
+  
+  period <- as.Date(period)
+  
+  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
+  
+  dta <- mget(dta_src)
+  dta <- dta[sapply(dta, function(x) !is.null(x))]
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  
+  dta_all <- rbindlist(dta)
+  
+  dta_all[, id := factor(id, levels = dta_src)]
+  
+  wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
+  
+  setkey(wet_dta)
+  wet_days <- unique(wet_dta[, .(id, time)])
+  
+  cols <- c('red', 'dark orange', 'dark green')
+  names(cols) <- levels(dta_all[, id])
+  
+  wd <- ggplot() +
+    geom_tile(data = wet_days, aes(x = time, y = id, fill = id), show.legend = F) +
+    scale_fill_manual(values = cols, name = 'Data \nsource') +
+    theme_bw() +
+    labs(x = 'Days', y = '', title = 'Wet days comparsion timeline') +
+    coord_fixed(20)
+  
+  wd
 }
