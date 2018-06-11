@@ -1,126 +1,70 @@
-require(rgdal); require(maptools); require(ggplot2); require(ggsn); require(data.table); require(gridExtra)
+require(rgdal); require(maptools); require(ggplot2); require(ggsn); require(data.table); require(gridExtra); require(scales)
+
+source('./source/auxiliary_functions.R')
 
 noa_gpm_compare_plot <- function(gpm_cell){
   stations <- noa_d_prcp[id %in% noa_stations[nearest_cell == gpm_cell, id]]
   cell <- gpm_d_prcp[id == gpm_cell]
   
   g <- ggplot(stations, aes(x = time, y = prcp, group = time)) +
-    geom_point(col = "tan", size = 2) +
-    geom_point(data = cell, col = "black", shape = 13, size = 3) +
+    geom_point(col = 'tan', size = 2) +
+    geom_point(data = cell, col = 'black', shape = 13, size = 3) +
     theme_bw()
   g
 }
 
-points_to_provinces <- function(stations,
-                                polyg) {
-  
-  coordinates(stations) <- ~ lon + lat
-  proj4string(stations) <- proj4string(poly)
-  
-  aux <- over(poly, stations, returnList = T)
-  
-  names(aux) <- poly@data$NAME_1
-  
-  out <- as.data.table(rbindlist(aux, idcol = T))
-  out[,.(.id ,id)]
-  
-}
 
-getSeason <- function(dates) {
-  
-  WS <- as.Date('2012-12-15', format = '%Y-%m-%d') # Winter Solstice
-  SE <- as.Date('2012-3-15',  format = '%Y-%m-%d') # Spring Equinox
-  SS <- as.Date('2012-6-15',  format = '%Y-%m-%d') # Summer Solstice
-  FE <- as.Date('2012-9-15',  format = '%Y-%m-%d') # Fall Equinox
-  
-  # Convert dates from any year to 2012 dates
-  d <- as.Date(strftime(dates, format ='2012-%m-%d'))
-  
-  ifelse (d >= WS | d < SE, 'Winter',
-          ifelse (d >= SE & d < SS, 'Spring',
-                  ifelse (d >= SS & d < FE, 'Summer', 'Fall')))
-}
-
-aux_fun_id_time <- function(df, 
-                            date, 
-                            name) {
-  
-  if(!is.null(df)) {
-    
-    df <- df[time == date,]
-    # df[, id := gsub('_.*','', id)]
-    df[, id := name]
-  }
-  
-  df
-}
-
-
-#' Title #####
-#'
-#' @param radar radar data
-#' @param satelite 
-#' @param ground 
-#' @param date 
-#'
-#' @return
-#' @export
-#'
-#' @examples
-map_plot <- function(radar = NULL, 
-                     satellite = NULL, 
-                     ground = NULL, 
-                     date = '2016-1-1') {
+map_plot <- function(Radar = NULL, 
+                     Satellite = NULL, 
+                     Stations = NULL, 
+                     date = '2016-1-1',
+                     title = '') {
   
   date <- as.Date(date)
   
-  dta_src <- c('radar', 'satellite', 'ground') ## string vector containg all available data sources (same as all possible data arguments)
+  dta_src <- c('Satellite', 'Radar', 'Stations') 
   
-  ## load spatial data & convert it to data.frame
-  poly <- readOGR('./data/geodata/gadm36_NLD_1.shp', verbose = F) #####
-  poly_f <- suppressMessages(fortify(poly))
+  dta <- mget(dta_src)
+  dta <- dta[sapply(dta, function(x) !is.null(x))]
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := names(dta)[i]])
   
-  ## data.table manipulation in order to get str: 'id', 'time' 'prcp', 'lon', 'lat'
-  prc_list <- lapply(seq_along(dta_src), function(i, ...) {aux_fun_id_time(df = get(dta_src[i]), date = date, name = dta_src[i])})
-
-  ## bind all available datasources to one data.frame
-  prc_all <- rbindlist(prc_list)
-  prc_all[, id := factor(id, levels = dta_src)]
+  dta_all <- rbindlist(dta)
+  dta_all[, id := factor(id, levels = dta_src)]
+  dta_all <- dta_all[time == date,]
   
-  ## select colours
-  cols <- c('red', 'dark orange', 'dark green')
-  names(cols) <- levels(prc_all[, id])
+  poly <- readOGR('data/geodata/gadm36_NLD_1.shp', verbose = F)
+  poly_f <- fortify(poly)
   
-  ## plot
+  cols <- c('dark orange', 'dark green', 'red')
+  names(cols) <- levels(dta_all[, id])
+  
   mp <- ggplot() +
     geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
-    geom_point(data = prc_all, aes(y = lat, x = lon, size = prcp, col = id), alpha = 0.5) +
+    geom_point(data = dta_all, aes(y = lat, x = lon, size = prcp, col = id), alpha = 0.5) +
     theme_bw() +
     scale_color_manual(values = cols, name = 'Data \nsource') +
-    scale_size_continuous(name = 'Precipitation') +
+    scale_size_continuous(name = 'Precipitation [mm]') +
     scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
     scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
-    scalebar(data = poly_f, x.min = min(long), x.max = max(long), y.min = min(lat), y.max = max(lat), 
-             dist = 25, dd2km = TRUE, model = 'WGS84', st.size = 2.5, height = .01) +
-    labs(x = '', y = '') +
+    labs(x = '', y = '', title = title) +
     coord_map()
   
-  return(mp)
+  mp
 }
 
 desc_stat <- function(Radar = NULL, 
                       Satellite = NULL, 
-                      Ground = NULL, 
-                      period = c('2015-10-1', '2016-9-1'),
+                      Stations = NULL, 
+                      period = c('2015-10-1', '2016-9-30'),
                       wet_par = c(.05, 1)) {
   
   period <- as.Date(period)
   
-  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
+  dta_src <- c('Satellite', 'Radar', 'Stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
-  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := names(dta)[i]])
   
   dta_all <- rbindlist(dta)
   dta_all[, id := factor(id, levels = dta_src)]
@@ -146,52 +90,56 @@ desc_stat <- function(Radar = NULL,
 
 ggcdf <- function(Radar = NULL, 
                   Satellite = NULL, 
-                  Ground = NULL, 
-                  period = c('2015-10-1', '2016-9-1'),
-                  wet_par = c(.05, 1)) {
+                  Stations = NULL, 
+                  period = c('2015-10-1', '2016-9-30'),
+                  wet_par = c(.05, 1),
+                  title = 'Transformed seasonal empirical distribution functions'
+                  ) {
   
   period <- as.Date(period)
   
-  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
+  dta_src <- c('Satellite', 'Radar', 'Stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
-  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := names(dta)[i]])
   
   dta_all <- rbindlist(dta)
   dta_all[, id := factor(id, levels = dta_src)]
   
   wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
-  wet_dta <- wet_dta[, seasons := getSeason(time)]
+  wet_dta <- wet_dta[, seasons := get_season(time)]
   
-  cols <- c('red', 'dark orange', 'dark green')
+  cols <- c('dark orange', 'dark green', 'red')
   names(cols) <- levels(dta_all[, id])
   
   cdf <- ggplot() +
     stat_ecdf(data = wet_dta, aes(x = prcp, y = -log(-log(..y..)), group = id, colour = id)) +
+    # stat_density(data = wet_dta, aes(x = prcp, group = id, colour = id)) +
     facet_wrap(~seasons, nrow = 2) +
     scale_colour_manual(values = cols, name = 'Data \nsource') +
     theme_bw() +
     theme(strip.background = element_blank()) +
-    labs(x = 'Precipitation', y = expression(-log(-log(p))), title = 'Transformed seasonal empirical distribution functions')
+    labs(x = 'Precipitation [mm]', y = expression(-log(-log(p))), title = title)
   
   cdf
 }
 
 ggbox <- function(Radar = NULL, 
                   Satellite = NULL, 
-                  Ground = NULL, 
-                  period = c('2015-10-1', '2016-9-1'),
+                  Stations = NULL, 
+                  period = c('2015-10-1', '2016-9-30'),
                   wet_par = c(.05, 1),
-                  seasonality = 'month') {
+                  seasonality = 'month',
+                  title = 'Monthly precipitation box-plots of wet days') {
   
   period <- as.Date(period)
   
-  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
+  dta_src <- c('Satellite', 'Radar', 'Stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
-  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := names(dta)[i]])
   
   dta_all <- rbindlist(dta)
   dta_all[, mnth := do.call(seasonality, list(time))]
@@ -200,7 +148,7 @@ ggbox <- function(Radar = NULL,
   
   wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
   
-  cols <- c('red', 'dark orange', 'dark green')
+  cols <- c('dark orange', 'dark green', 'red')
   names(cols) <- levels(dta_all[, id])
   
   ggb <- ggplot() +
@@ -208,7 +156,7 @@ ggbox <- function(Radar = NULL,
     scale_fill_manual(values = cols, name = 'Data \nsource') +
     scale_y_log10() +
     theme_bw() +
-    labs(x = 'Month', y = 'Precipitation \nlog-scale', title = 'Monthly precipitation box-plots of wet days')
+    labs(x = 'Month', y = 'Precipitation [mm] \nlog-scale', title = title)
   
   ggb
 }
@@ -216,17 +164,18 @@ ggbox <- function(Radar = NULL,
 
 wet_days_plot <- function(Radar = NULL,
                           Satellite = NULL,
-                          Ground = NULL,
-                          period = c('2015-10-1', '2016-9-1'),
-                          wet_par = c(.05, 1)) {
+                          Stations = NULL,
+                          period = c('2015-10-1', '2016-9-30'),
+                          wet_par = c(.05, 1),
+                          title = 'Wet days comparsion timeline') {
   
   period <- as.Date(period)
   
-  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
+  dta_src <- c('Satellite', 'Radar', 'Stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
-  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := names(dta)[i]])
   
   dta_all <- rbindlist(dta)
   
@@ -237,62 +186,60 @@ wet_days_plot <- function(Radar = NULL,
   setkey(wet_dta)
   wet_days <- unique(wet_dta[, .(id, time)])
   
-  cols <- c('red', 'dark orange', 'dark green')
+  cols <- c('dark orange', 'dark green', 'red')
   names(cols) <- levels(dta_all[, id])
   
   wd <- ggplot() +
     geom_tile(data = wet_days, aes(x = time, y = id, fill = id), show.legend = F) +
     scale_fill_manual(values = cols, name = 'Data \nsource') +
     theme_bw() +
-    labs(x = 'Days', y = '', title = 'Wet days comparsion timeline') +
+    labs(x = '', y = '', title = title) +
+    scale_x_date(labels = date_format("%m-%Y")) +
     coord_fixed(20)
   
   wd
 }
 
-wet_days_provinces <- function(Radar = NULL,
-                               Satellite = NULL,
-                               Ground = NULL,
-                               Radar_cells = NULL,
-                               Satellite_cells = NULL,
-                               Ground_cells = NULL,
-                               spatial_polygon,
-                               period = c('2015-10-1', '2016-9-1'),
-                               wet_par = c(.05, 1)) {
-  
-  period <- as.Date(period)
-  
-  dta_src <- c('Radar', 'Satellite', 'Ground') ## string vector containg all available data sources (same as all possible data arguments)
-  
-  dta <- mget(dta_src)
-  dta <- dta[sapply(dta, function(x) !is.null(x))]
-  
-  dta <- lapply(seq_along(dta), function(i)merge(dta[[i]], points_to_provinces(get(paste0(dta_src[i], '_cells')), spatial_polygon)))
-  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
-  
-  dta_all <- rbindlist(dta)
-  
-  dta_all[, id := factor(id, levels = dta_src)]
-  
-  wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
-  
-  setkey(wet_dta)
-  wet_days <- unique(wet_dta[, .(id, time, .id)])
-  
-  cols <- c('red', 'dark orange', 'dark green')
-  names(cols) <- levels(dta_all[, id])
-  
-  wdp <- ggplot() +
-    geom_tile(data = wet_days, aes(x = time, y = id, fill = id)) +
-    scale_fill_manual(values = cols, name = 'Data \nsource') +
-    theme_bw() +
-    labs(x = 'Days', title = 'Wet days in Provinces') +
-    coord_fixed(20) +
-    facet_wrap(~.id, ncol = 1) +
-    theme(strip.background = element_blank(),
-          axis.title.y = element_blank(),
-          axis.text.y = element_blank(),
-          axis.ticks.y = element_blank())
-  
-  wdp
-}
+# wet_days_provinces <- function(Radar = NULL,
+#                                Satellite = NULL,
+#                                Stations = NULL,
+#                                spatial_polygon,
+#                                period = c('2015-10-1', '2016-9-30'),
+#                                wet_par = c(.05, 1)) {
+#   
+#   period <- as.Date(period)
+#   
+#   dta_src <- c('Satellite', 'Radar', 'Stations') 
+#   
+#   dta <- mget(dta_src)
+#   dta <- dta[sapply(dta, function(x) !is.null(x))]
+#   
+#   dta <- lapply(seq_along(dta), function(i) merge(dta[[i]], points_to_provinces(dta[[i]], spatial_polygon)))
+#   dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := names(dta)[i]])
+#   
+#   dta_all <- rbindlist(dta)
+#   
+#   dta_all[, id := factor(id, levels = dta_src)]
+#   
+#   wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
+#   
+#   setkey(wet_dta)
+#   wet_days <- unique(wet_dta[, .(id, time, .id)])
+#   
+#   cols <- c('dark orange', 'dark green', 'red')
+#   names(cols) <- levels(dta_all[, id])
+#   
+#   wdp <- ggplot() +
+#     geom_tile(data = wet_days, aes(x = time, y = id, fill = id)) +
+#     scale_fill_manual(values = cols, name = 'Data \nsource') +
+#     theme_bw() +
+#     labs(x = 'Days', title = 'Wet days in Provinces') +
+#     coord_fixed(20) +
+#     facet_wrap(~.id, ncol = 1) +
+#     theme(strip.background = element_blank(),
+#           axis.title.y = element_blank(),
+#           axis.text.y = element_blank(),
+#           axis.ticks.y = element_blank())
+#   
+#   wdp
+# }
