@@ -1,4 +1,4 @@
-require(rgdal); require(maptools); require(ggplot2); require(ggsn); require(data.table); require(gridExtra); require(scales)
+require(rgdal); require(maptools); require(ggplot2); require(ggsn); require(data.table); require(gridExtra); require(scales); require(dplyr)
 
 source('./source/auxiliary_functions.R')
 
@@ -167,7 +167,8 @@ wet_days_plot <- function(Radar = NULL,
                           Stations = NULL,
                           period = c('2015-10-1', '2016-9-30'),
                           wet_par = c(.05, 1),
-                          title = 'Wet days comparsion timeline') {
+                          title = 'Wet days comparsion timeline',
+                          method = 'tile') {
   
   period <- as.Date(period)
   
@@ -189,15 +190,87 @@ wet_days_plot <- function(Radar = NULL,
   cols <- c('dark orange', 'dark green', 'red')
   names(cols) <- levels(dta_all[, id])
   
-  wd <- ggplot() +
-    geom_tile(data = wet_days, aes(x = time, y = id, fill = id), show.legend = F) +
-    scale_fill_manual(values = cols, name = 'Data \nsource') +
-    theme_bw() +
-    labs(x = '', y = '', title = title) +
-    scale_x_date(labels = date_format("%m-%Y")) +
-    coord_fixed(20)
+  if(method == 'tile') {
+    
+    wd <- ggplot() +
+      geom_tile(data = wet_days, aes(x = time, y = id, fill = id), show.legend = F) +
+      scale_fill_manual(values = cols, name = 'Data \nsource') +
+      theme_bw() +
+      labs(x = '', y = '', title = title) +
+      scale_x_date(labels = date_format("%m-%Y")) +
+      coord_fixed(20)
+  }
+  
+  if(method == 'upset') {
+    
+    wet_days[, val := 1]
+    wet_days <- dcast(wet_days, time ~ id, value.var = 'val')
+    aux_date <- data.table(time = seq(from = period[1], to = period[2], by = 'day'))
+    
+    aux <- as.data.table(full_join(wet_days, aux_date, by = 'time'))
+    aux[is.na(aux)] <- 0
+    
+    wd <- UpSetR::upset(aux)
+    
+  }
+  
   
   wd
+}
+
+raster_maps <- function(Radar,
+                        Satellite,
+                        poly,
+                        period = c('2015-10-1', '2016-9-30'),
+                        wet_par = c(.05, 1)) {
+  
+  dta_r <- Radar
+  dta_r <- dta_r[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  dta_r[, annual_radar := sum(prcp), by = id]
+  setkey(dta_r)
+  dta_r <- unique(dta_r[,.(lon, lat, annual_radar)])
+  
+  dta_s <- Satellite
+  dta_s <- dta_s[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  dta_s <- dta_s[time %between% period,]
+  dta_s[, annual_satellite := sum(prcp), by = id]
+  dta_s <- unique(dta_s[,.(lon, lat, annual_satellite)])
+  
+  dta_dif <- merge(dta_r, dta_s, by = c('lon', 'lat'))
+  
+  poly_f <- fortify(poly)
+  
+  rdr <- ggplot() +
+    geom_raster(data = dta_dif, aes(x = lon, y = lat, fill = annual_radar)) +
+    geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
+    coord_quickmap() +
+    scale_fill_gradient(low = '#f7fcf5', high = '#005a32', name = 'Precipitation [mm]') +
+    scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
+    scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
+    labs(x = '', y = '') +
+    theme_bw()
+  
+  gpm <- ggplot() +
+    geom_raster(data = dta_dif, aes(x = lon, y = lat, fill = annual_satellite)) +
+    geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
+    coord_quickmap() +
+    scale_fill_gradient(low = '#fff5eb', high = '#8c2d04', name = 'Precipitation [mm]') +
+    scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
+    scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
+    labs(x = '', y = '') +
+    theme_bw()
+  
+  dif <- ggplot() +
+    geom_raster(data = dta_dif, aes(x = lon, y = lat, fill = annual_radar / annual_satellite)) +
+    geom_path(data = poly_f, aes(x = long, y = lat, group = group)) +
+    coord_quickmap() +
+    scale_fill_gradient2(midpoint = 1, name = 'Relative \nDifference [-]') +
+    scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
+    scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
+    labs(x = '', y = '', title = 'Difference in annual precipitation') +
+    theme_bw()
+  
+  list(Radar = rdr, Satellite = gpm, Difference = dif)
 }
 
 # wet_days_provinces <- function(Radar = NULL,
