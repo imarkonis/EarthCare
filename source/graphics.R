@@ -35,7 +35,7 @@ map_plot <- function(Radar = NULL,
   poly <- readOGR('data/geodata/gadm36_NLD_1.shp', verbose = F)
   poly_f <- fortify(poly)
   
-  cols <- c('dark orange', 'dark green', 'red')
+  cols <- c('orange', 'dark green', 'red')
   names(cols) <- levels(dta_all[, id])
   
   mp <- ggplot() +
@@ -108,9 +108,9 @@ ggcdf <- function(Radar = NULL,
   dta_all[, id := factor(id, levels = dta_src)]
   
   wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
-  wet_dta <- wet_dta[, seasons := get_season(time)]
+  wet_dta <- wet_dta[, seasons := factor(get_season(time), levels = c('Spring', 'Summer', 'Autumn', 'Winter'))]
   
-  cols <- c('dark orange', 'dark green', 'red')
+  cols <- c('orange', 'dark green', 'red')
   names(cols) <- levels(dta_all[, id])
   
   cdf <- ggplot() +
@@ -119,7 +119,7 @@ ggcdf <- function(Radar = NULL,
     facet_wrap(~seasons, nrow = 2) +
     scale_colour_manual(values = cols, name = 'Data \nsource') +
     theme_bw() +
-    theme(strip.background = element_blank()) +
+    # theme(strip.background = element_blank()) +
     labs(x = 'Precipitation [mm]', y = expression(-log(-log(p))), title = title)
   
   cdf
@@ -130,7 +130,7 @@ ggbox <- function(Radar = NULL,
                   Stations = NULL, 
                   period = c('2015-10-1', '2016-9-30'),
                   wet_par = c(.05, 1),
-                  seasonality = 'month',
+                  seasonality = '%m',
                   title = 'Monthly precipitation box-plots of wet days') {
   
   period <- as.Date(period)
@@ -142,21 +142,23 @@ ggbox <- function(Radar = NULL,
   dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := names(dta)[i]])
   
   dta_all <- rbindlist(dta)
-  dta_all[, mnth := do.call(seasonality, list(time))]
+  dta_all[, mnth := format(time, seasonality)]
   
   dta_all[, id := factor(id, levels = dta_src)]
   
   wet_dta <- na.omit(dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1])
+  wet_dta[, mnth := factor(mnth)]
   
-  cols <- c('dark orange', 'dark green', 'red')
+  cols <- c('orange', 'dark green', 'red')
   names(cols) <- levels(dta_all[, id])
   
   ggb <- ggplot() +
-    geom_boxplot(data = na.omit(wet_dta), aes(x = factor(mnth), y = prcp, fill = id)) +
+    geom_boxplot(data = na.omit(wet_dta), aes(x = mnth, y = prcp, fill = id)) +
     scale_fill_manual(values = cols, name = 'Data \nsource') +
     scale_y_log10() +
     theme_bw() +
-    labs(x = 'Month', y = 'Precipitation [mm] \nlog-scale', title = title)
+    labs(x = 'Month', y = 'Precipitation [mm] \nlog-scale', title = title) +
+    scale_x_discrete(limits = c('10', '11', '12', paste0('0' , 1:9)))
   
   ggb
 }
@@ -187,7 +189,7 @@ wet_days_plot <- function(Radar = NULL,
   setkey(wet_dta)
   wet_days <- unique(wet_dta[, .(id, time)])
   
-  cols <- c('dark orange', 'dark green', 'red')
+  cols <- c('orange', 'dark green', 'red')
   names(cols) <- levels(dta_all[, id])
   
   if(method == 'tile') {
@@ -267,7 +269,7 @@ raster_maps <- function(Radar,
     scale_fill_gradient2(midpoint = 1, name = 'Relative \nDifference [-]') +
     scale_y_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
     scale_x_continuous(labels = function(x) paste0(sprintf('%.1f', x),'°')) +
-    labs(x = '', y = '', title = 'Difference in annual precipitation') +
+    labs(x = '', y = '', title = '') +
     theme_bw()
   
   list(Radar = rdr, Satellite = gpm, Difference = dif)
@@ -299,7 +301,7 @@ raster_maps <- function(Radar,
 #   setkey(wet_dta)
 #   wet_days <- unique(wet_dta[, .(id, time, .id)])
 #   
-#   cols <- c('dark orange', 'dark green', 'red')
+#   cols <- c('orange', 'dark green', 'red')
 #   names(cols) <- levels(dta_all[, id])
 #   
 #   wdp <- ggplot() +
