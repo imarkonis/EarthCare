@@ -73,3 +73,79 @@ map_plot <- function(radar = NULL, satellite = NULL, ground = NULL, date = '2016
   
   return(mp)
 }
+
+
+desc_stat <- function(dta,
+                      period = c('2015-10-1', '2016-9-1'),
+                      wet_par = c(.5, 1)) {
+  
+  period <- as.Date(period)
+  
+  wet_dta <- dta[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  
+  stat <- wet_dta[, .(mean = mean(prcp, na.rm = TRUE),
+                      min = min(prcp, na.rm = TRUE),
+                      q_05 = quantile(prcp, .05, na.rm = TRUE),
+                      q_25 = quantile(prcp, .25, na.rm = TRUE),
+                      median = median(prcp, na.rm = TRUE),
+                      q_75 = quantile(prcp, .75, na.rm = TRUE),
+                      q_95 = quantile(prcp, .95, na.rm = TRUE),
+                      max = max(prcp, na.rm = TRUE),
+                      strd = sd(prcp, na.rm = TRUE),
+                      coef_var = sd(prcp, na.rm = TRUE)/mean(prcp, na.rm = TRUE),
+                      iqr = IQR(prcp, na.rm = TRUE))]
+  
+  t(stat)
+  
+}
+
+ggcdf <- function(dta, 
+                  period = c('2015-10-1', '2016-9-1'),
+                  wet_par = c(.5, 1),
+                  seasonality = 4) {
+  
+  period <- as.Date(period)
+  
+  dta[, seasons := rep(1:seasonality, each = length(time)/seasonality), by = id]
+  
+  wet_dta <- dta[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
+  
+  cdf <- ggplot() +
+    stat_ecdf(data = wet_dta, aes(x = prcp, group = seasons, colour = factor(seasons)))
+  
+  return(cdf)
+}
+
+ggbox <- function(radar = NULL, 
+                  satellite = NULL, 
+                  ground = NULL, 
+                  period = c('2015-10-1', '2016-9-30'),
+                  wet_par = c(.5, 1),
+                  seasonality = 'month') {
+  
+  period <- as.Date(period)
+  
+  dta_src <- c('satellite', 'ground', 'radar') ## string vector containg all available data sources (same as all possible data arguments)
+  
+  dta <- mget(dta_src)
+  dta <- dta[sapply(dta, function(x) !is.null(x))]
+  dta <- lapply(seq_along(dta), function(i) dta[[i]][, id := dta_src[i]])
+  
+  dta_all <- rbindlist(dta)
+  dta_all[, mnth := do.call(seasonality, list(time))]
+  
+  dta_all[, id := factor(id, levels = dta_src)]
+  
+  wet_dta <- dta_all[dta_all[, .I[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2])], by = id]$V1]
+  
+  cols <- c('dark orange', 'red', 'dark green')
+  names(cols) <- levels(dta_all[, id])
+  
+  ggb <- ggplot() +
+    geom_boxplot(data = wet_dta, aes(x = factor(mnth), y = prcp, fill = id)) +
+    scale_fill_manual(values = cols, name = 'Data \nsource') +
+    theme_bw() +
+    labs(x = 'Month', y = 'precipitation')
+  
+  ggb
+}
