@@ -1,4 +1,4 @@
-require(rgdal); require(maptools); require(ggplot2); require(ggsn); require(data.table); require(gridExtra); require(scales); require(dplyr)
+library(rgdal); library(maptools); library(ggplot2); library(ggsn); library(data.table); library(gridExtra); library(scales); library(dplyr)
 
 source('./source/auxiliary_functions.R')
 
@@ -14,15 +14,15 @@ noa_gpm_compare_plot <- function(gpm_cell){
 }
 
 
-map_plot <- function(Radar = NULL, 
-                     Satellite = NULL, 
-                     Stations = NULL, 
+map_plot <- function(radar = NULL, 
+                     satellite = NULL, 
+                     stations = NULL, 
                      date = '2016-1-1',
                      title = '') {
   
   date <- as.Date(date)
   
-  dta_src <- c('Satellite', 'Radar', 'Stations') 
+  dta_src <- c('satellite', 'radar', 'stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
@@ -52,15 +52,15 @@ map_plot <- function(Radar = NULL,
   mp
 }
 
-desc_stat <- function(Radar = NULL, 
-                      Satellite = NULL, 
-                      Stations = NULL, 
+desc_stat <- function(radar = NULL, 
+                      satellite = NULL, 
+                      stations = NULL, 
                       period = c('2015-10-1', '2016-9-30'),
                       wet_par = c(.05, 1)) {
   
   period <- as.Date(period)
   
-  dta_src <- c('Satellite', 'Radar', 'Stations') 
+  dta_src <- c('satellite', 'radar', 'stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
@@ -88,9 +88,9 @@ desc_stat <- function(Radar = NULL,
   stat
 }
 
-ggcdf <- function(Radar = NULL, 
-                  Satellite = NULL, 
-                  Stations = NULL, 
+ggcdf <- function(radar = NULL, 
+                  satellite = NULL, 
+                  stations = NULL, 
                   period = c('2015-10-1', '2016-9-30'),
                   wet_par = c(.05, 1),
                   title = 'Transformed seasonal empirical distribution functions'
@@ -98,7 +98,7 @@ ggcdf <- function(Radar = NULL,
   
   period <- as.Date(period)
   
-  dta_src <- c('Satellite', 'Radar', 'Stations') 
+  dta_src <- c('satellite', 'radar', 'stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
@@ -126,9 +126,9 @@ ggcdf <- function(Radar = NULL,
 }
 
 
-ggbox <- function(Radar = NULL, 
-                  Satellite = NULL, 
-                  Stations = NULL, 
+ggbox <- function(radar = NULL, 
+                  satellite = NULL, 
+                  stations = NULL, 
                   period = c('2015-10-1', '2016-9-30'),
                   wet_par = c(.05, 1),
                   seasonality = '%m',
@@ -136,7 +136,7 @@ ggbox <- function(Radar = NULL,
   
   period <- as.Date(period)
   
-  dta_src <- c('Satellite', 'Radar', 'Stations') 
+  dta_src <- c('satellite', 'radar', 'stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
@@ -165,9 +165,9 @@ ggbox <- function(Radar = NULL,
 }
 
 
-wet_days_plot <- function(Radar = NULL,
-                          Satellite = NULL,
-                          Stations = NULL,
+wet_days_plot <- function(radar = NULL,
+                          satellite = NULL,
+                          stations = NULL,
                           period = c('2015-10-1', '2016-9-30'),
                           wet_par = c(.05, 1),
                           title = 'Wet days comparsion timeline',
@@ -175,7 +175,7 @@ wet_days_plot <- function(Radar = NULL,
   
   period <- as.Date(period)
   
-  dta_src <- c('Satellite', 'Radar', 'Stations') 
+  dta_src <- c('satellite', 'radar', 'stations') 
   
   dta <- mget(dta_src)
   dta <- dta[sapply(dta, function(x) !is.null(x))]
@@ -221,19 +221,19 @@ wet_days_plot <- function(Radar = NULL,
   wd
 }
 
-raster_maps <- function(Radar,
-                        Satellite,
+raster_maps <- function(radar,
+                        satellite,
                         poly,
                         period = c('2015-10-1', '2016-9-30'),
                         wet_par = c(.05, 1)) {
   
-  dta_r <- Radar
+  dta_r <- radar
   dta_r <- dta_r[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
   dta_r[, annual_radar := sum(prcp), by = id]
   setkey(dta_r)
   dta_r <- unique(dta_r[,.(lon, lat, annual_radar)])
   
-  dta_s <- Satellite
+  dta_s <- satellite
   dta_s <- dta_s[(time %between% period) & (quantile(prcp, 1 - wet_par[1], na.rm = T)) & (prcp > wet_par[2]),]
   dta_s <- dta_s[time %between% period,]
   dta_s[, annual_satellite := sum(prcp), by = id]
@@ -273,19 +273,19 @@ raster_maps <- function(Radar,
     labs(x = '', y = '', title = '') +
     theme_bw()
   
-  list(Radar = rdr, Satellite = gpm, Difference = dif)
+  list(radar = rdr, satellite = gpm, difference = dif)
 }
 
-# wet_days_provinces <- function(Radar = NULL,
-#                                Satellite = NULL,
-#                                Stations = NULL,
+# wet_days_provinces <- function(radar = NULL,
+#                                satellite = NULL,
+#                                stations = NULL,
 #                                spatial_polygon,
 #                                period = c('2015-10-1', '2016-9-30'),
 #                                wet_par = c(.05, 1)) {
 #   
 #   period <- as.Date(period)
 #   
-#   dta_src <- c('Satellite', 'Radar', 'Stations') 
+#   dta_src <- c('satellite', 'radar', 'stations') 
 #   
 #   dta <- mget(dta_src)
 #   dta <- dta[sapply(dta, function(x) !is.null(x))]

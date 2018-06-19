@@ -1,8 +1,6 @@
-source("./source/paths.R")
+library(data.table); library(ncdf4); library(doSNOW)
 
-require(data.table)
-require(ncdf4)
-require(doSNOW)
+source("./source/paths.R")
 
 read_noa_stations <- function(){
   stations_noa <- data.table(read.delim(paste0(data_noa_path, "stations_list.txt"), header = FALSE, sep = ""))

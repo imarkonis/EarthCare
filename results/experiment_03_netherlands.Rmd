@@ -41,82 +41,41 @@ This is a presentation of the scalegram methodology, applied for the validation 
 
 **Instrumental data (knmi)**
 
-todo
+* Dataset: 240 homogenised stations 1951-now (raw)
+* Temporal Resolution: 24hours
+* Spatial Resolution: -
+* Date Range: `r min(knmi_prcp$time)` to `r max(knmi_prcp$time)` 
+* Spatial Region: latitude: `r range(knmi_stations$lat)`, longitude: `r range(knmi_stations$lon)`
+* Format: *.txt
+* IDs: `r min(knmi_stations$id)`
+* Size: `r nrow(knmi_prcp)` total values, over `r nrow(knmi_stations)` stations
 * Downloaded from: https://climexp.knmi.nl/PhomNL.cgi?id=312456c83e660703df1bfea9ba4fba50
 
 **Radar data (knmi)**
 
-todo
+* Dataset: RAD_NL25_RAC_MFBS_24H_NC
+* Temporal Resolution: 24hours
+* Spatial Resolution: 1x1km
+* Date Range: `r min(rdr_prcp$time)` to `r max(rdr_prcp$time)` 
+* Spatial Region: latitude: `r range(rdr_cells$lat)`, longitude: `r range(rdr_cells$lon)`
+* Format: *.nc
+* Variables: 
+* IDs: `r min(rdr_cells$id)`
+* Size: `r nrow(rdr_prcp)` total values, over `r nrow(rdr_cells)` grid cells
 * Downloaded from: https://climexp.knmi.nl/select.cgi?id=312456c83e660703df1bfea9ba4fba50&field=knmi_radar_daily
 
 ***
 
 ### Code structure
 
-_data_import.R_ : Import and prepare station, radar and satellite data for netherlands. Each pair 
-# of data (values and coordinates) is then saved to experiment_3.rdata.
+_data_import.R_ : Import and prepare station, radar and satellite data for the Netherlands. Each pair 
+of data (values and coordinates) is then saved to **experiment_3_raw.rdata**.
 
-_spatial_agg.R_ : Aggregation of rain events over space.
+_comparison_prep.R_ : Prepare datasets for comparison: align datasets in time and space and save them to **experiment_3_main.rdata**, find wet days
+and save them to **experiment_3_wdays.rdata**.
 
-***
+_comparison_eda.R_ : Exploratory analysis contains comparison of first moments, extreme values (gumbel probability), wet days (intersection plots). These results are also presented below.
 
-### Datasets in space
-
-In each case, grid cells with no gauge/radar cell center within a 0.5 deg radious of satellite cell center, are removed.
-
-**GPM grid cell centers vs. station locations**
-
-```{r plot stations/grid cells, eval = T}
-my_date <- as.Date("2016-9-03")
-test_rdr <- rdr_prcp[time == my_date]
-test_rdr <- merge(test_rdr, rdr_cells)
-
-test_gpm <- gpm_d_prcp[time == my_date]
-test_gpm <- merge(test_gpm, gpm_d_cells)
-
-test_knmi <- knmi_prcp[time == my_date]
-test_knmi <- merge(test_knmi, knmi_stations)
-test_knmi <- test_knmi[complete.cases(test_knmi)]
-
-ggplot(test_rdr, aes(y = lat, x = lon, col = prcp)) + 
-  geom_point(data = test_gpm[id %in% knmi_stations$nearest_cell], aes(y = lat, x = lon, size = prcp), col = "red") +
-  geom_point(data = test_knmi, aes(y = lat, x = lon, size = prcp), col = "yellow") +
-  labs(x = NULL, y = NULL) +
-  theme_bw()
-```
-
-**GPM grid cell centers vs. radar cells**
-
-```{r plot radar/grid cells, eval = T}
-ggplot(test_rdr, aes(y = lat, x = lon, col = prcp)) + 
-  geom_point() +
-  geom_point(data = test_gpm[id %in% rdr_cells$nearest_cell], aes(y = lat, x = lon, size = prcp), col = "red") +
-  labs(x = NULL, y = NULL) +
-  theme_bw()
-```
-
-The figures above present daily precipitation on `r my_date`. 
-
-***
-
-**Monthly heterogeneity**
-```{r plot monthly means, eval = F}
-noa_month_prcp <- noa_prcp[, sum(prcp, na.rm = T), id]  
-colnames(noa_month_prcp)[2] <- "prcp"
-gpm_month_prcp <- gpm_d_prcp[, sum(prcp), id]
-colnames(gpm_month_prcp)[2] <- "prcp"
-
-noa_month_prcp <- merge(noa_month_prcp, noa_stations[, .(id, lon, lat)])
-gpm_month_prcp <- merge(gpm_month_prcp, gpm_cells[, .(id, lon, lat)])
-
-month_prcp <- rbind(cbind(gpm_month_prcp, dataset = "gpm"),
-                    cbind(noa_month_prcp, dataset = "noa"))
-
-ggplot(data = month_prcp, aes(lon, lat, col = prcp, size = dataset)) +
-  geom_point() +
-  xlab(label = "") +
-  ylab(label = "") +
-  theme_bw()
-```
+_comparison_agg.R_ : Aggregation of rain events over space and time.
 
 

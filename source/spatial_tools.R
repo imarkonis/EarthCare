@@ -1,4 +1,4 @@
-require(rgeos); require(maptools); require(SDMTools); require(data.table)
+library(rgeos); library(maptools); library(SDMTools); library(data.table)
 
 #' Title
 #' 
@@ -105,6 +105,5 @@ agg_prcp_period_sum <- function(x, period, starting_point){
   x <- cbind(x[order(rank)], agg_prcp_out(x))
   return(x[complete.cases(x), ])
 }
-x <- knmi_prcp
-x_agg <- x[time %in% my_date, mean(prcp), id]
+
 
