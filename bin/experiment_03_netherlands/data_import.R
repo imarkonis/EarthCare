@@ -67,7 +67,7 @@ rm(knmi); gc()
 knmi_stations <- put_stations_to_cells(knmi_stations, gpm_d_cells) 
 rdr_cells <- put_stations_to_cells(rdr_cells, gpm_d_cells) 
 
-save(knmi_stations, knmi_prcp, gpm_d_cells, gpm_d_prcp, rdr_cells, rdr_prcp, file = "./data/experiment_3.rdata")
+save(knmi_stations, knmi_prcp, gpm_d_cells, gpm_d_prcp, rdr_cells, rdr_prcp, file = "./data/experiment_3_raw.rdata")
 
 #### Reanalysis
 
