@@ -74,8 +74,18 @@ of data (values and coordinates) is then saved to **experiment_3_raw.rdata**.
 _comparison_prep.R_ : Prepare datasets for comparison: align datasets in time and space and save them to **experiment_3_main.rdata**, find wet days
 and save them to **experiment_3_wdays.rdata**.
 
-_comparison_eda.R_ : Exploratory analysis contains comparison of first moments, extreme values (gumbel probability), wet days (intersection plots). These results are also presented below.
+_comparison_eda.R_ : Exploratory analysis contains comparison of first moments, extreme values (gumbel probability), wet days (intersection plots). 
 
 _comparison_agg.R_ : Aggregation of rain events over space and time.
+
+***
+
+### Exploratory Data Analysis
+
+_Results of comparison_eda.R_
+
+```{r EDA}
+
+```
 
 
