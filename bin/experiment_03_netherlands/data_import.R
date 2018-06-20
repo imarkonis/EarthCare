@@ -14,15 +14,15 @@ gpm_d_cells <- gpm_d[[2]]
 gpm_d_prcp <- gpm_d[[1]]
 
 #### Radar
-rdr_nc_file <- paste0(data_knmi_radar_path, "/nl_2009_2016.nc")
+rdr_nc_file <- paste0(data_knmi_radar_path, "/radar_sum.nc")
 rdr_nc <- ncdf4::nc_open(rdr_nc_file)  
 rdr = ncdf4::ncvar_get(rdr_nc)
 dimnames(rdr)[[3]] <- rdr_nc$dim$time$vals 
 dimnames(rdr)[[2]] <- rdr_nc$dim$lat$vals 
 dimnames(rdr)[[1]] <- rdr_nc$dim$lon$vals
-rdr <- rdr[, , 2465:2829]  ## Record length to be imported
+rdr <- rdr[, , 1896:3376]  ## Record length to be imported
 kk = ncdf4::nc_close(rdr_nc)
-rdr <- data.table::data.table(reshape2::melt(rdr, varnames = c("lon", "lat", "time"), value.name = "prcp")) 
+rdr <- data.table(reshape2::melt(rdr, varnames = c("lon", "lat", "time"), value.name = "prcp")) 
 rdr$time <- rdr$time + as.Date("2009-01-01")
 rdr_prcp <- rdr[complete.cases(rdr)]
 rdr_prcp[, lat := round(as.numeric(as.character(lat)), 2)]

@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = F, cache = T, warning = F)
 require(ggplot2)
 require(data.table)
 
-load("../data/experiment_3.rdata") #Created in data_import
+load("../data/experiment_3_raw.rdata") #Created in data_import
 ```
 
 # Experiment 3 
