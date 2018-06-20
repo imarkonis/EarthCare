@@ -18,18 +18,21 @@ ggplot() + #original station points vs grid cells
 load('./data/experiment_3_main.rdata')
 map_plot(radar = rdr_prcp, stations = knmi_prcp)
 ggbox(radar = rdr_prcp, satellite = gpm_rdr_prcp, stations = knmi_prcp,
-      wet_par = c(.01, 7.5),
+      period = c('2014-12-3', '2018-3-30'),
       title = '')
-desc_stat(radar = rdr_prcp, satellite = gpm_rdr_prcp, stations = knmi_prcp)
+desc_stat(radar = rdr_prcp, satellite = gpm_rdr_prcp, stations = knmi_prcp, 
+          period = c('2014-12-3', '2018-3-30'))
 ggcdf(radar = rdr_prcp, satellite = gpm_rdr_prcp, stations = knmi_prcp,
-      wet_par = c(.01, 7.5),
+      period = c('2014-12-3', '2018-3-30'),
       title = '')
 wet_days_plot(radar = rdr_prcp, satellite = gpm_rdr_prcp, stations = knmi_prcp,
               wet_par = c(.01, 7.5), 
+              period = c('2014-12-3', '2018-3-30'),
               title = '', 
               method = 'upset')
 wet_days_plot(radar = rdr_prcp, satellite = gpm_rdr_prcp, stations = knmi_prcp,
               wet_par = c(.01, 7.5), 
+              period = c('2014-12-3', '2018-3-30'),
               title = '', 
               method = 'tile')
 
